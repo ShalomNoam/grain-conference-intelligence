@@ -74,14 +74,28 @@ async function resolveGeminiModel(apiKey: string): Promise<string> {
   const fallback = "gemini-flash-latest";
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
-    if (!res.ok) return fallback;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[ai-provider] Gemini ListModels HTTP ${res.status}, falling back to ${fallback}:`, body.slice(0, 1000));
+      return fallback;
+    }
     const data = await res.json();
     const models: Array<{ name?: string; supportedGenerationMethods?: string[] }> = data?.models ?? [];
     const usable = models.filter((m) => m.name && m.supportedGenerationMethods?.includes("generateContent"));
     const flash = usable.find((m) => m.name!.includes("flash") && !m.name!.includes("8b"));
     const chosen = flash ?? usable[0];
-    return chosen?.name ? chosen.name.replace(/^models\//, "") : fallback;
-  } catch {
+    if (!chosen?.name) {
+      console.error(
+        `[ai-provider] Gemini ListModels returned ${models.length} models, none usable for generateContent. Falling back to ${fallback}. Raw names:`,
+        models.map((m) => m.name)
+      );
+      return fallback;
+    }
+    const resolved = chosen.name.replace(/^models\//, "");
+    console.log(`[ai-provider] Gemini ListModels resolved "${resolved}" from ${usable.length} usable model(s):`, usable.map((m) => m.name));
+    return resolved;
+  } catch (err) {
+    console.error(`[ai-provider] Gemini ListModels threw, falling back to ${fallback}:`, err instanceof Error ? err.message : String(err));
     return fallback;
   }
 }
