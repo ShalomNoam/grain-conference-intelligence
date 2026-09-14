@@ -62,18 +62,49 @@ async function friendlyHttpError(res: Response, providerLabel: string): Promise<
   return detail ? `${base} — ${detail}` : base;
 }
 
-// Which exact Gemini model names are live varies by account and shifts over
-// time (a hardcoded "gemini-2.5-flash" 404'd, then a hardcoded
-// "gemini-1.5-flash" 404'd too — Google's own roster moved out from under
-// both). Rather than hardcode a fourth guess, ask Google's own ListModels
-// endpoint what this key can actually use, and pick a "flash" model from
-// the real, current answer. Falls back to a hardcoded default only if the
-// discovery call itself fails, so a real invalid-key error still surfaces
-// normally instead of being masked by a discovery failure.
+// Google's own docs recommend the x-goog-api-key header over the legacy
+// ?key= query-string parameter — and it turns out to not just be a style
+// preference: newer "auth key" credentials issued for Google Cloud-org
+// accounts (service-account-bound keys, prefixed AQ. instead of AIza) are
+// REJECTED via ?key= (401 ACCESS_TOKEN_TYPE_UNSUPPORTED / API_KEY_SERVICE_
+// BLOCKED) but work fine via this header. Confirmed against a known-working
+// reference implementation. Using the header for every Gemini call, not
+// just AQ.-prefixed ones, also keeps the key out of URLs that could end up
+// in server/proxy access logs.
+const GEMINI_KEY_HEADER = "x-goog-api-key";
+
+// Gemini responds 503 when the model is temporarily overloaded and 429 on
+// rate limits — both are typically transient, so retry a couple of times
+// with exponential backoff before surfacing an error.
+const GEMINI_RETRYABLE_STATUSES = new Set([429, 503]);
+
+async function fetchGeminiWithRetry(url: string, options: RequestInit, maxAttempts = 3): Promise<Response> {
+  let res: Response;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    res = await fetch(url, options);
+    if (!GEMINI_RETRYABLE_STATUSES.has(res.status) || attempt === maxAttempts) return res;
+    await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)));
+  }
+  return res!;
+}
+
+// Gemini's fast-moving model roster (2.5-flash and 1.5-flash both 404'd
+// within the same week Google rolled out the 3.x line) means any single
+// hardcoded name goes stale eventually. GEMINI_PRIMARY_MODEL is today's
+// verified-working default (confirmed live against the real API, see
+// commit history) — tried first, since it avoids an extra ListModels
+// round-trip on the common case. If it 404s for a given key/account,
+// resolveGeminiModel() below falls back to asking Google what that key can
+// actually use, so the app keeps working even after this default goes
+// stale again.
+const GEMINI_PRIMARY_MODEL = "gemini-3.6-flash";
+
 async function resolveGeminiModel(apiKey: string): Promise<string> {
   const fallback = "gemini-flash-latest";
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+      headers: { [GEMINI_KEY_HEADER]: apiKey },
+    });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.error(`[ai-provider] Gemini ListModels HTTP ${res.status}, falling back to ${fallback}:`, body.slice(0, 1000));
@@ -132,21 +163,39 @@ export async function callAiProvider(
 
   try {
     if (provider === "gemini") {
-      const model = await resolveGeminiModel(apiKey);
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
+      const callModel = async (model: string) =>
+        fetchGeminiWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", [GEMINI_KEY_HEADER]: apiKey },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { temperature, maxOutputTokens: maxTokens },
           }),
-        }
-      );
-      if (!res.ok) return { error: await friendlyHttpError(res, label), provider };
+        });
+
+      let res = await callModel(GEMINI_PRIMARY_MODEL);
+      // Today's known-good model can go stale (Google's roster moves fast —
+      // see GEMINI_PRIMARY_MODEL's comment). A 404 specifically means "this
+      // model name doesn't exist for this key," so it's worth one retry
+      // against whatever Google's own ListModels says is actually current
+      // before giving up; any other failure (auth, quota, overload) means
+      // trying a different model wouldn't help, so it's reported as-is.
+      if (res.status === 404) {
+        const fallbackModel = await resolveGeminiModel(apiKey);
+        if (fallbackModel !== GEMINI_PRIMARY_MODEL) res = await callModel(fallbackModel);
+      }
+
+      if (!res.ok) {
+        if (res.status === 503) return { error: "Gemini is temporarily overloaded and didn't recover after retrying. Try again in a moment.", provider };
+        if (res.status === 429) return { error: "Gemini rate limit reached and didn't recover after retrying. Try again in a moment.", provider };
+        return { error: await friendlyHttpError(res, label), provider };
+      }
       const data = await res.json();
-      const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const candidate = data?.candidates?.[0];
+      if (candidate?.finishReason === "SAFETY" || candidate?.finishReason === "RECITATION") {
+        return { error: `Gemini blocked this response (${candidate.finishReason.toLowerCase()}) rather than generating it.`, provider };
+      }
+      const text: string | undefined = candidate?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("");
       if (!text) return { error: "Gemini returned no content (it may have blocked the prompt).", provider };
       return { text: text.trim(), provider };
     }
