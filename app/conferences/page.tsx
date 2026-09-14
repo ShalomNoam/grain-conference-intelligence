@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Conference, Coverage } from "@/lib/types";
 import { scoreConference, WEIGHTS, TIER_LABEL, type Tier } from "@/lib/scoring";
-import { VERTICAL_LABEL, ALL_VERTICALS, ALL_REGIONS, FORMAT_LABEL, formatDateRange } from "@/lib/labels";
-import { TierBadge, VerticalTag } from "@/components/Badges";
+import { VERTICAL_LABEL, ALL_VERTICALS, ALL_REGIONS, formatDateRange } from "@/lib/labels";
+import { TierBadge } from "@/components/Badges";
 import { getRepName } from "@/lib/settings";
 
 type SortKey = "score" | "date" | "audience";
@@ -19,6 +19,7 @@ export default function ConferencesPage() {
   const [tier, setTier] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("score");
   const [showMethod, setShowMethod] = useState(false);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,9 +89,9 @@ export default function ConferencesPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name or city…"
-            className="flex-1 min-w-[160px] border border-line rounded-md px-3 py-2 text-[13.5px] bg-transparent"
+            className="flex-1 min-w-[160px] border border-line rounded-md px-3 py-2.5 text-[14px] bg-transparent"
           />
-          <select value={vertical} onChange={(e) => setVertical(e.target.value)} className="border border-line rounded-md px-2 py-2 text-[13.5px] bg-transparent">
+          <select value={vertical} onChange={(e) => setVertical(e.target.value)} className="border border-line rounded-md px-2 py-2.5 text-[14px] bg-transparent">
             <option value="all">All verticals</option>
             {ALL_VERTICALS.map((v) => (
               <option key={v} value={v}>
@@ -98,15 +99,7 @@ export default function ConferencesPage() {
               </option>
             ))}
           </select>
-          <select value={region} onChange={(e) => setRegion(e.target.value)} className="border border-line rounded-md px-2 py-2 text-[13.5px] bg-transparent">
-            <option value="all">All regions</option>
-            {ALL_REGIONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-          <select value={tier} onChange={(e) => setTier(e.target.value)} className="border border-line rounded-md px-2 py-2 text-[13.5px] bg-transparent">
+          <select value={tier} onChange={(e) => setTier(e.target.value)} className="border border-line rounded-md px-2 py-2.5 text-[14px] bg-transparent">
             <option value="all">All tiers</option>
             {(["S", "A", "B", "C"] as Tier[]).map((t) => (
               <option key={t} value={t}>
@@ -114,15 +107,33 @@ export default function ConferencesPage() {
               </option>
             ))}
           </select>
-          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="border border-line rounded-md px-2 py-2 text-[13.5px] bg-transparent">
-            <option value="score">Sort: ICP score</option>
-            <option value="date">Sort: Date</option>
-            <option value="audience">Sort: Audience size</option>
-          </select>
+          <button
+            onClick={() => setShowMoreFilters((s) => !s)}
+            className="text-[13.5px] font-medium text-ink-dim border border-line rounded-md px-3 py-2.5"
+          >
+            {showMoreFilters ? "Fewer filters" : "More filters"}
+          </button>
         </div>
-        <button onClick={() => setShowMethod((s) => !s)} className="self-start text-[12.5px] text-teal underline underline-offset-2">
-          {showMethod ? "Hide" : "How is the score calculated?"}
-        </button>
+        {showMoreFilters && (
+          <div className="flex flex-wrap gap-2 border-t border-line pt-3">
+            <select value={region} onChange={(e) => setRegion(e.target.value)} className="border border-line rounded-md px-2 py-2.5 text-[14px] bg-transparent">
+              <option value="all">All regions</option>
+              {ALL_REGIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="border border-line rounded-md px-2 py-2.5 text-[14px] bg-transparent">
+              <option value="score">Sort: ICP score</option>
+              <option value="date">Sort: Date</option>
+              <option value="audience">Sort: Audience size</option>
+            </select>
+            <button onClick={() => setShowMethod((s) => !s)} className="self-center text-[12.5px] text-teal underline underline-offset-2">
+              {showMethod ? "Hide" : "How is the score calculated?"}
+            </button>
+          </div>
+        )}
         {showMethod && (
           <div className="text-[13px] text-ink-dim border-t border-line pt-3 grid sm:grid-cols-2 gap-x-6 gap-y-1">
             <p>ICP Vertical Fit — {WEIGHTS.verticalFit * 100}% · is Grain&apos;s actual buyer in the room?</p>
@@ -140,39 +151,34 @@ export default function ConferencesPage() {
         <p className="text-ink-faint text-[13.5px]">No conferences match these filters.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map(({ conf, score, tier: t, breakdown }) => {
+          {filtered.map(({ conf, score, tier: t }) => {
             const covering = coverage.filter((c) => c.conferenceId === conf.id);
             return (
-              <div key={conf.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-serif font-semibold text-[16px] leading-snug">{conf.name}</h3>
-                  <TierBadge tier={t} score={score} />
+              <div key={conf.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3 h-full">
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-serif font-bold text-[17px] leading-snug">{conf.name}</h3>
+                  <p className="text-[13px] text-ink-dim">
+                    {conf.city}, {conf.country} · {formatDateRange(conf.startDate, conf.endDate)}
+                    {!conf.datesConfirmed && <span className="text-ink-faint"> · est.</span>}
+                  </p>
                 </div>
-                <p className="text-[12.5px] text-ink-dim font-mono">
-                  {formatDateRange(conf.startDate, conf.endDate)} · {conf.city}, {conf.country}
-                  {!conf.datesConfirmed && <span className="text-ink-faint"> · est.</span>}
+
+                <TierBadge tier={t} score={score} />
+
+                <p className="text-[13px] text-ink-dim">
+                  {conf.audienceSize.toLocaleString()} attendees · {conf.verticals.map((v) => VERTICAL_LABEL[v]).join(", ")}
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {conf.verticals.map((v) => (
-                    <VerticalTag key={v} label={VERTICAL_LABEL[v]} />
-                  ))}
-                </div>
-                <div className="text-[12.5px] text-ink-dim flex flex-wrap gap-x-3 gap-y-1">
-                  <span>{conf.audienceSize.toLocaleString()} attendees</span>
-                  <span>{FORMAT_LABEL[conf.format]}</span>
-                  <span>{"$".repeat(conf.costTier)} cost</span>
-                </div>
-                {conf.notes && <p className="text-[12.5px] text-ink-faint italic">{conf.notes}</p>}
-                <div className="flex items-center justify-between mt-1 pt-2 border-t border-line">
+
+                <div className="flex items-center justify-between mt-auto pt-3 border-t border-line">
                   <span className="text-[12px] text-ink-faint">
-                    {covering.length > 0 ? `Coverage: ${covering.map((c) => c.repName).join(", ")}` : "No one assigned yet"}
+                    {covering.length > 0 ? `${covering.map((c) => c.repName).join(", ")}` : "Unassigned"}
                   </span>
                   <button
                     onClick={() => quickCover(conf.id)}
                     disabled={busyId === conf.id}
-                    className="text-[12px] font-medium text-teal border border-teal rounded-full px-3 py-1 hover:bg-teal-bg disabled:opacity-50"
+                    className="text-[13px] font-semibold text-white bg-teal rounded-full px-4 py-2 hover:opacity-90 disabled:opacity-50"
                   >
-                    + Add me
+                    + I&apos;m Attending
                   </button>
                 </div>
               </div>

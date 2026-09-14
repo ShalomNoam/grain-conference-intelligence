@@ -122,3 +122,10 @@ export const ARC_TONE_CLASS: Record<ArcTone, string> = {
   neutral: "bg-paper-alt text-ink-dim",
   caution: "bg-warn-bg text-warn-ink",
 };
+
+// Collapses the rule-based arc into one of three scannable signals for the
+// Contacts card badge: is this worth booth time, or not?
+export function signalForArc(arc: RelationshipArc): "closing" | "tireKicker" | "firstTouch" {
+  if (arc.touchCount <= 1) return "firstTouch";
+  return arc.temperatureTrend === "rising" ? "closing" : "tireKicker";
+}

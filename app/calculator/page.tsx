@@ -107,7 +107,10 @@ export default function CalculatorPage() {
       <div className="bg-ink text-white rounded-DEFAULT p-6 flex flex-col gap-4">
         <div>
           <p className="text-[12px] text-white/60 font-mono uppercase tracking-wide">Estimated annual savings</p>
-          <p className="text-[38px] font-serif font-bold tabular leading-tight">{formatMoney(annualSavings)}</p>
+          <p className="text-[56px] font-serif font-bold tabular leading-none mt-1">{formatMoney(annualSavings)}</p>
+          <p className="text-[15px] font-semibold text-teal-bg mt-2">
+            ✓ Reduces FX spread by {pctReduction.toFixed(0)}%
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-4 border-t border-white/15 pt-3">
           <div>

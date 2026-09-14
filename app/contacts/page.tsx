@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Contact, Conference, Interaction, PendingMatch } from "@/lib/types";
-import type { RelationshipArc } from "@/lib/nudge";
-import { ArcBadge, TemperatureBadge } from "@/components/Badges";
+import { signalForArc, type RelationshipArc } from "@/lib/nudge";
+import { SignalBadge, TemperatureBadge } from "@/components/Badges";
 import { getGeminiKey, getHubspotToken } from "@/lib/settings";
 
 interface EnrichedContact {
@@ -165,32 +165,37 @@ export default function ContactsPage() {
             const latest = interactions[interactions.length - 1];
             const isOpen = expanded === contact.id;
             const ai = aiResult[contact.id];
+            const signal = signalForArc(arc);
             return (
-              <div key={contact.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-2.5">
+              <div key={contact.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
-                    <p className="font-serif font-semibold text-[16px]">{contact.displayName}</p>
+                    <p className="font-serif font-semibold text-[17px]">{contact.displayName}</p>
                     <p className="text-[13px] text-ink-dim">
                       {latest.title || "—"} at {latest.company || "—"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11.5px] font-mono text-ink-faint">{interactions.length} touch{interactions.length === 1 ? "" : "es"}</span>
-                    <ArcBadge label={arc.label} tone={arc.tone} />
-                  </div>
+                  <SignalBadge type={signal} count={signal === "closing" ? interactions.length : undefined} />
                 </div>
 
-                <p className="text-[13px] text-ink-dim border-l-2 border-line pl-3">{arc.nudge}</p>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {interactions.map((i) => (
-                    <span key={i.id} className="text-[11px] border border-line rounded-full px-2 py-0.5 text-ink-faint">
-                      {confName(i.conferenceId)}
-                    </span>
+                <div className="flex items-center gap-1.5 py-1">
+                  {interactions.map((i, idx) => (
+                    <div key={i.id} className="flex items-center gap-1.5 flex-1">
+                      <div
+                        title={`${confName(i.conferenceId)} · ${new Date(i.timestamp).toLocaleDateString()}`}
+                        className={`w-3 h-3 rounded-full shrink-0 ${
+                          idx === interactions.length - 1 ? "bg-ink" : "bg-line"
+                        }`}
+                      />
+                      {idx < interactions.length - 1 && <div className="h-[2px] flex-1 bg-line" />}
+                    </div>
                   ))}
+                  <span className="text-[11.5px] font-mono text-ink-faint shrink-0 ml-1">
+                    {interactions.length} touch{interactions.length === 1 ? "" : "es"}
+                  </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <button onClick={() => setExpanded(isOpen ? null : contact.id)} className="text-[12.5px] text-teal underline underline-offset-2">
                     {isOpen ? "Hide timeline" : "View timeline"}
                   </button>
@@ -208,6 +213,7 @@ export default function ContactsPage() {
 
                 {isOpen && (
                   <div className="flex flex-col gap-2 mt-1 border-t border-line pt-3">
+                    <p className="text-[13px] text-ink-dim border-l-2 border-line pl-3">{arc.nudge}</p>
                     {interactions.map((i) => (
                       <div key={i.id} className="flex flex-col gap-1 text-[12.5px] border-b border-line/60 pb-2 last:border-none">
                         <div className="flex items-center justify-between flex-wrap gap-1.5">

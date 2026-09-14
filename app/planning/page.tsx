@@ -85,28 +85,23 @@ export default function PlanningPage() {
           </section>
 
           <section className="flex flex-col gap-3">
-            <div>
-              <h2 className="text-[16px] font-semibold font-serif">Trip clustering opportunities</h2>
-              <p className="text-[13px] text-ink-dim">
-                Same region, within ~4 weeks of each other — worth one longer trip instead of two flights.
-              </p>
-            </div>
+            <h2 className="text-[16px] font-semibold font-serif">Trip clustering opportunities</h2>
             {clusters.length === 0 ? (
               <p className="text-[13px] text-ink-faint">No clustering opportunities in the current dataset.</p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-3">
                 {clusters.map((cl, idx) => (
-                  <div key={idx} className="bg-teal-bg border border-teal/30 rounded-DEFAULT p-4 flex flex-col gap-2">
-                    <p className="font-mono text-[12px] text-teal font-medium">
-                      {cl.region} · {cl.spanDays}-day window
+                  <div key={idx} className="bg-teal text-white rounded-DEFAULT p-4 flex flex-col gap-3">
+                    <p className="text-[15px] font-semibold">
+                      💡 Travel Savings: {cl.conferences.length} {cl.region} conferences within {Math.ceil(cl.spanDays / 7)} weeks — pair these trips
                     </p>
-                    <ul className="flex flex-col gap-1.5">
+                    <ul className="flex flex-col gap-1.5 bg-white/10 rounded-lg p-3">
                       {cl.conferences.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between gap-2 text-[13px]">
+                        <li key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
                           <span>
-                            {c.name} <span className="text-ink-faint">— {c.city}</span>
+                            {c.name} <span className="text-white/70">— {c.city}</span>
                           </span>
-                          <span className="font-mono text-[11.5px] text-ink-dim whitespace-nowrap">{formatDateRange(c.startDate, c.endDate)}</span>
+                          <span className="font-mono text-[11.5px] text-white/80 whitespace-nowrap">{formatDateRange(c.startDate, c.endDate)}</span>
                         </li>
                       ))}
                     </ul>

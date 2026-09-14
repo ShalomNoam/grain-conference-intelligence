@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Conference, Interaction, Temperature } from "@/lib/types";
 import { getRepName, setRepName, getLastConferenceId, setLastConferenceId } from "@/lib/settings";
 
@@ -47,8 +47,6 @@ export default function CapturePage() {
         }
       });
   }, []);
-
-  const selectedConf = useMemo(() => conferences.find((c) => c.id === conferenceId), [conferences, conferenceId]);
 
   function toggleTag(tag: string) {
     setTags((t) => (t.includes(tag) ? t.filter((x) => x !== tag) : [...t, tag]));
@@ -108,18 +106,18 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-xl mx-auto pb-16">
+    <div className="flex flex-col gap-4 max-w-md mx-auto pb-28">
       <div>
         <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Field Capture</p>
         <h1 className="text-[22px] font-bold">Log who you just met</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1">Built for the booth floor: name + company is enough to save. Everything else is optional.</p>
+        <p className="text-ink-dim text-[13.5px] mt-1">Name + company is enough to save. Everything else is optional.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col gap-2">
         <select
           value={conferenceId}
           onChange={(e) => setConferenceId(e.target.value)}
-          className="col-span-2 border border-line rounded-lg px-3 py-2.5 text-[14px] bg-paper-surface"
+          className="border border-line rounded-lg px-3 min-h-[48px] text-[16px] bg-paper-surface"
         >
           {conferences.map((c) => (
             <option key={c.id} value={c.id}>
@@ -131,13 +129,13 @@ export default function CapturePage() {
           value={rep}
           onChange={(e) => setRep(e.target.value)}
           placeholder="Your name"
-          className="col-span-2 border border-line rounded-lg px-3 py-2.5 text-[13.5px] bg-paper-surface text-ink-dim"
+          className="border border-line rounded-lg px-3 min-h-[48px] text-[15px] bg-paper-surface text-ink-dim"
         />
       </div>
 
       {feedback && (
         <div
-          className={`rounded-lg px-4 py-3 text-[13.5px] font-medium ${
+          className={`rounded-lg px-4 py-3 text-[14px] font-medium ${
             feedback.kind === "success" ? "bg-teal-bg text-teal" : feedback.kind === "review" ? "bg-warn-bg text-warn-ink" : "bg-danger-bg text-danger"
           }`}
         >
@@ -145,48 +143,54 @@ export default function CapturePage() {
         </div>
       )}
 
-      <div className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3">
+      <div className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-4">
         <input
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Name *"
-          className="border border-line rounded-lg px-3 py-3 text-[16px]"
+          className="border border-line rounded-lg px-4 min-h-[48px] text-[16px]"
         />
         <input
           value={company}
           onChange={(e) => setCompany(e.target.value)}
           placeholder="Company"
-          className="border border-line rounded-lg px-3 py-3 text-[16px]"
+          className="border border-line rounded-lg px-4 min-h-[48px] text-[16px]"
         />
 
         <div>
-          <p className="text-[12px] text-ink-faint mb-1.5">Temperature</p>
+          <p className="text-[13px] text-ink-dim font-medium mb-2">Temperature</p>
           <div className="grid grid-cols-3 gap-2">
-            {(["cold", "warm", "hot"] as Temperature[]).map((t) => (
+            {(
+              [
+                { t: "cold", label: "❄️ Cold", active: "bg-slate-500 text-white border-slate-500", idle: "border-slate-300 text-slate-500" },
+                { t: "warm", label: "🔥 Warm", active: "bg-amber-500 text-white border-amber-500", idle: "border-amber-400 text-amber-600" },
+                { t: "hot", label: "🔥 Hot", active: "bg-rose-600 text-white border-rose-600", idle: "border-rose-400 text-rose-600" },
+              ] as const
+            ).map(({ t, label, active, idle }) => (
               <button
                 key={t}
                 type="button"
-                onClick={() => setTemperature(t)}
-                className={`py-2.5 rounded-lg text-[13.5px] font-medium capitalize border transition-colors ${
-                  temperature === t ? "bg-ink text-white border-ink" : "border-line text-ink-dim"
+                onClick={() => setTemperature(t as Temperature)}
+                className={`min-h-[48px] rounded-lg text-[14px] font-semibold border-2 transition-colors ${
+                  temperature === t ? active : `bg-transparent ${idle}`
                 }`}
               >
-                {t}
+                {label}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="text-[12px] text-ink-faint mb-1.5">Quick tags</p>
-          <div className="flex flex-wrap gap-1.5">
+          <p className="text-[13px] text-ink-dim font-medium mb-2">Quick tags</p>
+          <div className="flex flex-wrap gap-2">
             {TAG_PRESETS.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => toggleTag(tag)}
-                className={`px-2.5 py-1.5 rounded-full text-[12px] border transition-colors ${
+                className={`px-3 min-h-[40px] rounded-full text-[13px] font-medium border transition-colors ${
                   tags.includes(tag) ? "bg-gold text-white border-gold" : "border-line text-ink-dim"
                 }`}
               >
@@ -201,28 +205,30 @@ export default function CapturePage() {
           onChange={(e) => setNotes(e.target.value)}
           placeholder="One-line note (optional) — what they said, what to remember"
           rows={2}
-          className="border border-line rounded-lg px-3 py-2.5 text-[14px] resize-none"
+          className="border border-line rounded-lg px-4 py-3 text-[15px] resize-none"
         />
 
         {!showMore ? (
-          <button type="button" onClick={() => setShowMore(true)} className="self-start text-[12.5px] text-teal underline underline-offset-2">
+          <button type="button" onClick={() => setShowMore(true)} className="self-start text-[13px] text-teal underline underline-offset-2">
             + Title / email
           </button>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Job title" className="border border-line rounded-lg px-3 py-2.5 text-[14px]" />
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="border border-line rounded-lg px-3 py-2.5 text-[14px]" />
+          <div className="flex flex-col gap-2">
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Job title" className="border border-line rounded-lg px-4 min-h-[48px] text-[15px]" />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="border border-line rounded-lg px-4 min-h-[48px] text-[15px]" />
           </div>
         )}
       </div>
 
-      <button
-        onClick={submit}
-        disabled={submitting || !name.trim() || !conferenceId}
-        className="bg-ink text-white rounded-full py-3.5 text-[15px] font-semibold disabled:opacity-40 sticky bottom-20 md:bottom-4 shadow-lg"
-      >
-        {submitting ? "Saving…" : `Log lead${selectedConf ? ` at ${selectedConf.name}` : ""}`}
-      </button>
+      <div className="fixed bottom-16 md:bottom-0 inset-x-0 z-20 md:static bg-paper/95 backdrop-blur md:bg-transparent px-4 pb-3 pt-2 md:p-0">
+        <button
+          onClick={submit}
+          disabled={submitting || !name.trim() || !conferenceId}
+          className="w-full max-w-md mx-auto block bg-ink text-white rounded-full min-h-[52px] text-[16px] font-bold disabled:opacity-40 shadow-lg"
+        >
+          {submitting ? "Saving…" : `Save & Sync Lead`}
+        </button>
+      </div>
 
       {recent.length > 0 && (
         <div className="flex flex-col gap-1.5 mt-2">
