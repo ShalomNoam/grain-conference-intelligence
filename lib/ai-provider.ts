@@ -62,6 +62,30 @@ async function friendlyHttpError(res: Response, providerLabel: string): Promise<
   return detail ? `${base} — ${detail}` : base;
 }
 
+// Which exact Gemini model names are live varies by account and shifts over
+// time (a hardcoded "gemini-2.5-flash" 404'd, then a hardcoded
+// "gemini-1.5-flash" 404'd too — Google's own roster moved out from under
+// both). Rather than hardcode a fourth guess, ask Google's own ListModels
+// endpoint what this key can actually use, and pick a "flash" model from
+// the real, current answer. Falls back to a hardcoded default only if the
+// discovery call itself fails, so a real invalid-key error still surfaces
+// normally instead of being masked by a discovery failure.
+async function resolveGeminiModel(apiKey: string): Promise<string> {
+  const fallback = "gemini-flash-latest";
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    const models: Array<{ name?: string; supportedGenerationMethods?: string[] }> = data?.models ?? [];
+    const usable = models.filter((m) => m.name && m.supportedGenerationMethods?.includes("generateContent"));
+    const flash = usable.find((m) => m.name!.includes("flash") && !m.name!.includes("8b"));
+    const chosen = flash ?? usable[0];
+    return chosen?.name ? chosen.name.replace(/^models\//, "") : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // Server-side only (needs to reach each vendor's API directly). Picks the
 // endpoint, auth header, request body shape, and response parsing for
 // whichever provider applies, and normalizes all four down to
@@ -94,8 +118,9 @@ export async function callAiProvider(
 
   try {
     if (provider === "gemini") {
+      const model = await resolveGeminiModel(apiKey);
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
