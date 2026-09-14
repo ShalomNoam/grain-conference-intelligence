@@ -41,12 +41,25 @@ export interface AiCallResult {
   provider?: AiProvider;
 }
 
-// A clean, rep-facing message — no raw JSON dumped into the UI. The full
-// response body is still logged server-side for whoever debugs this later.
+// A clean, rep-facing message — not a raw JSON dump — but still carrying the
+// vendor's own error.message when there is one, since "invalid key" and
+// "model not found" and "out of credit" all need a different fix and a rep
+// (or whoever's debugging their report) shouldn't have to guess which.
+// The full response body is additionally logged server-side either way.
 async function friendlyHttpError(res: Response, providerLabel: string): Promise<string> {
-  const body = await res.text().catch(() => "");
-  if (body) console.error(`[ai-provider] ${providerLabel} HTTP ${res.status}:`, body.slice(0, 2000));
-  return `Error connecting to ${providerLabel}: please verify the key is valid and has available credit. (HTTP ${res.status})`;
+  const raw = await res.text().catch(() => "");
+  if (raw) console.error(`[ai-provider] ${providerLabel} HTTP ${res.status}:`, raw.slice(0, 2000));
+
+  let detail = "";
+  try {
+    const data = raw ? JSON.parse(raw) : null;
+    detail = data?.error?.message || data?.message || "";
+  } catch {
+    // Response wasn't JSON — no extra detail available, fall back to the base message.
+  }
+
+  const base = `Error connecting to ${providerLabel}: please verify the key is valid and has available credit. (HTTP ${res.status})`;
+  return detail ? `${base} — ${detail}` : base;
 }
 
 // Server-side only (needs to reach each vendor's API directly). Picks the
@@ -82,7 +95,7 @@ export async function callAiProvider(
   try {
     if (provider === "gemini") {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
