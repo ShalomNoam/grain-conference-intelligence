@@ -169,7 +169,14 @@ export async function callAiProvider(
           headers: { "Content-Type": "application/json", [GEMINI_KEY_HEADER]: apiKey },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature, maxOutputTokens: maxTokens },
+            // gemini-3.6-flash is a "thinking" model by default — its internal
+            // reasoning tokens eat into maxOutputTokens before the visible
+            // answer does, which was silently truncating short summaries
+            // mid-sentence. This task (a short relationship-arc read) doesn't
+            // need multi-step reasoning, so turn thinking off entirely:
+            // faster, cheaper, and the full maxOutputTokens budget goes to
+            // the actual answer.
+            generationConfig: { temperature, maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } },
           }),
         });
 
