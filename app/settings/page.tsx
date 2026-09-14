@@ -4,31 +4,34 @@ import { useEffect, useState } from "react";
 import {
   getRepName,
   setRepName as saveRepName,
-  getGeminiKey,
-  setGeminiKey as saveGeminiKey,
+  getApiKey,
+  setApiKey as saveApiKey,
   getHubspotToken,
   setHubspotToken as saveHubspotToken,
 } from "@/lib/settings";
+import { detectProvider, PROVIDER_LABEL } from "@/lib/ai-provider";
 
 export default function SettingsPage() {
   const [rep, setRep] = useState("");
-  const [geminiKey, setGeminiKeyState] = useState("");
+  const [apiKey, setApiKeyState] = useState("");
   const [hubspotToken, setHubspotTokenState] = useState("");
   const [sharedStorage, setSharedStorage] = useState<boolean | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setRep(getRepName());
-    setGeminiKeyState(getGeminiKey());
+    setApiKeyState(getApiKey());
     setHubspotTokenState(getHubspotToken());
     fetch("/api/conferences")
       .then((r) => r.json())
       .then((d) => setSharedStorage(Boolean(d.sharedStorage)));
   }, []);
 
+  const provider = detectProvider(apiKey);
+
   function save() {
     saveRepName(rep);
-    saveGeminiKey(geminiKey);
+    saveApiKey(apiKey);
     saveHubspotToken(hubspotToken);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -68,19 +71,22 @@ export default function SettingsPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-[14px] font-semibold">Gemini API key</span>
+          <span className="text-[14px] font-semibold">API Key</span>
           <input
             type="password"
-            value={geminiKey}
-            onChange={(e) => setGeminiKeyState(e.target.value)}
-            placeholder="AIza…"
+            value={apiKey}
+            onChange={(e) => setApiKeyState(e.target.value)}
+            placeholder="Paste your Gemini, Claude, or OpenAI key…"
             className="border border-line rounded-lg px-4 min-h-[48px] text-[14px] font-mono"
           />
+          {apiKey.trim() &&
+            (provider ? (
+              <span className="text-[12.5px] font-semibold text-teal">✓ Key recognized successfully ({PROVIDER_LABEL[provider]})</span>
+            ) : (
+              <span className="text-[12.5px] font-semibold text-danger">Key format not recognized — double-check for typos.</span>
+            ))}
           <span className="text-[12px] text-ink-faint">
-            Powers AI relationship summaries. Get free at{" "}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="text-teal font-medium underline">
-              aistudio.google.com/apikey
-            </a>
+            Powers AI relationship summaries. Paste any Gemini, Claude, or OpenAI key — the provider is detected automatically.
           </span>
         </label>
 

@@ -9,7 +9,7 @@
 
 const KEYS = {
   repName: "grain-cit:repName",
-  geminiKey: "grain-cit:geminiKey",
+  apiKey: "grain-cit:apiKey",
   hubspotToken: "grain-cit:hubspotToken",
   lastConferenceId: "grain-cit:lastConferenceId",
 } as const;
@@ -35,8 +35,8 @@ function write(key: string, value: string): void {
 export const getRepName = () => read(KEYS.repName);
 export const setRepName = (v: string) => write(KEYS.repName, v);
 
-export const getGeminiKey = () => read(KEYS.geminiKey);
-export const setGeminiKey = (v: string) => write(KEYS.geminiKey, v);
+export const getApiKey = () => read(KEYS.apiKey);
+export const setApiKey = (v: string) => write(KEYS.apiKey, v);
 
 export const getHubspotToken = () => read(KEYS.hubspotToken);
 export const setHubspotToken = (v: string) => write(KEYS.hubspotToken, v);
