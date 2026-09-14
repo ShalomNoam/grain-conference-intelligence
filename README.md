@@ -4,7 +4,7 @@ A working conference-prioritization, coverage-planning, field-lead-capture and
 cross-conference relationship-tracking tool for Grain's sales team — built for
 the AI Builder home assignment.
 
-**Live demo:** _add your deployed URL here after following Deploy below_
+**Live demo:** https://grain-conference-intelligence-henna.vercel.app/conferences
 **Video walkthrough:** _add your video link here_
 
 ---
