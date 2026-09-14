@@ -24,6 +24,7 @@ export default function ContactsPage() {
   const [hubspotBusy, setHubspotBusy] = useState<string | null>(null);
   const [hubspotMsg, setHubspotMsg] = useState<Record<string, string>>({});
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -164,8 +165,27 @@ export default function ContactsPage() {
           {filtered.map(({ contact, interactions, arc }) => {
             const latest = interactions[interactions.length - 1];
             const isOpen = expanded === contact.id;
+            const isMenuOpen = menuOpenId === contact.id;
             const ai = aiResult[contact.id];
             const signal = signalForArc(arc);
+            const isSingleTouch = interactions.length <= 1;
+
+            if (isSingleTouch) {
+              return (
+                <div key={contact.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-serif font-semibold text-[15.5px]">{contact.displayName}</p>
+                    <p className="text-[12.5px] text-ink-dim">
+                      {latest.title || "—"} at {latest.company || "—"}
+                    </p>
+                  </div>
+                  <span className="text-[12px] text-ink-faint font-medium whitespace-nowrap shrink-0">
+                    🌱 First Touch · {confName(latest.conferenceId)}
+                  </span>
+                </div>
+              );
+            }
+
             return (
               <div key={contact.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -195,17 +215,36 @@ export default function ContactsPage() {
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => setExpanded(isOpen ? null : contact.id)} className="text-[12.5px] text-teal underline underline-offset-2">
-                    {isOpen ? "Hide timeline" : "View timeline"}
-                  </button>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => getAiSummary(contact.id)}
                     disabled={aiLoading === contact.id}
-                    className="text-[12.5px] font-medium border border-gold text-gold-ink rounded-full px-3 py-1 disabled:opacity-50"
+                    className="flex-1 text-[13.5px] font-semibold text-white bg-gold rounded-full px-4 py-2.5 hover:opacity-90 disabled:opacity-50"
                   >
-                    {aiLoading === contact.id ? "Thinking…" : "AI relationship summary"}
+                    {aiLoading === contact.id ? "Thinking…" : "✨ Generate AI Follow-up Draft"}
                   </button>
+                  <div className="relative shrink-0">
+                    <button
+                      onClick={() => setMenuOpenId(isMenuOpen ? null : contact.id)}
+                      className="text-ink-faint border border-line rounded-full w-9 h-9 flex items-center justify-center hover:bg-paper-alt"
+                      aria-label="More actions"
+                    >
+                      ⋯
+                    </button>
+                    {isMenuOpen && (
+                      <div className="absolute right-0 top-full mt-1 z-10 bg-paper-surface border border-line rounded-lg shadow-lg py-1 min-w-[160px]">
+                        <button
+                          onClick={() => {
+                            setExpanded(isOpen ? null : contact.id);
+                            setMenuOpenId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-[13px] text-ink-dim hover:bg-paper-alt"
+                        >
+                          {isOpen ? "Hide full history" : "View full history"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {ai?.summary && <p className="text-[13px] bg-gold-light/40 border border-gold/30 rounded-lg p-3 whitespace-pre-line">{ai.summary}</p>}

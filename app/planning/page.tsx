@@ -7,10 +7,19 @@ import { detectClusters, computeQuarterBuckets } from "@/lib/planning";
 import { formatDateRange } from "@/lib/labels";
 import { TierBadge } from "@/components/Badges";
 
+function currentQuarterKey(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-Q${Math.floor(d.getUTCMonth() / 3) + 1}`;
+}
+
 export default function PlanningPage() {
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [coverage, setCoverage] = useState<Coverage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeQuarter, setActiveQuarter] = useState<string | null>(null);
+  const [heroExpanded, setHeroExpanded] = useState(true);
+  const [showOtherClusters, setShowOtherClusters] = useState(false);
+  const [showRepCoverage, setShowRepCoverage] = useState(false);
 
   useEffect(() => {
     fetch("/api/conferences")
@@ -25,6 +34,19 @@ export default function PlanningPage() {
   const buckets = useMemo(() => computeQuarterBuckets(conferences, coverage), [conferences, coverage]);
   const clusters = useMemo(() => detectClusters(conferences), [conferences]);
 
+  useEffect(() => {
+    if (activeQuarter || buckets.length === 0) return;
+    const nowKey = currentQuarterKey();
+    const defaultBucket = buckets.find((b) => b.key === nowKey) ?? buckets.find((b) => b.key > nowKey) ?? buckets[0];
+    setActiveQuarter(defaultBucket.key);
+  }, [buckets, activeQuarter]);
+
+  const heroCluster = useMemo(() => {
+    if (clusters.length === 0) return null;
+    return [...clusters].sort((a, b) => b.conferences.length - a.conferences.length || a.spanDays - b.spanDays)[0];
+  }, [clusters]);
+  const otherClusters = useMemo(() => clusters.filter((c) => c !== heroCluster), [clusters, heroCluster]);
+
   const repMap = useMemo(() => {
     const m = new Map<string, Coverage[]>();
     for (const c of coverage) {
@@ -34,6 +56,8 @@ export default function PlanningPage() {
     }
     return m;
   }, [coverage]);
+
+  const currentBucket = buckets.find((b) => b.key === activeQuarter) ?? buckets[0];
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,94 +74,155 @@ export default function PlanningPage() {
         <p className="text-ink-faint text-[13.5px]">Loading…</p>
       ) : (
         <>
+          {heroCluster && (
+            <section className="bg-teal text-white rounded-DEFAULT p-5 flex flex-col gap-3">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wide text-white/70 mb-1">Top trip-clustering opportunity</p>
+                <p className="text-[17px] font-semibold leading-snug">
+                  {heroCluster.conferences.length === 2 ? (
+                    <>💡 Combine {heroCluster.conferences.map((c) => c.name).join(" & ")} — one trip instead of two.</>
+                  ) : (
+                    <>
+                      💡 {heroCluster.conferences.length} {heroCluster.region} events in {heroCluster.spanDays} days — one trip instead of{" "}
+                      {heroCluster.conferences.length}.
+                    </>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => setHeroExpanded((s) => !s)}
+                className="self-start bg-white text-teal font-semibold text-[13.5px] rounded-full px-4 py-2 hover:opacity-90"
+              >
+                {heroExpanded ? "Hide Trip Plan" : "Review Trip Plan"}
+              </button>
+              {heroExpanded && (
+                <ul className="flex flex-col gap-1.5 bg-white/10 rounded-lg p-3">
+                  {heroCluster.conferences.map((c) => (
+                    <li key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
+                      <span>
+                        {c.name} <span className="text-white/70">— {c.city}</span>
+                      </span>
+                      <span className="font-mono text-[11.5px] text-white/80 whitespace-nowrap">{formatDateRange(c.startDate, c.endDate)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
           <section className="flex flex-col gap-3">
             <h2 className="text-[16px] font-semibold font-serif">Quarter-by-quarter coverage</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
               {buckets.map((b) => (
-                <div
+                <button
                   key={b.key}
-                  className={`rounded-DEFAULT border p-3.5 flex flex-col gap-2 ${
-                    b.isGap ? "border-danger bg-danger-bg" : "border-line bg-paper-surface"
+                  onClick={() => setActiveQuarter(b.key)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold border transition-colors ${
+                    activeQuarter === b.key
+                      ? "bg-ink text-white border-ink"
+                      : b.isGap
+                      ? "border-danger text-danger"
+                      : "border-line text-ink-dim"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[13px] font-semibold">{b.label}</span>
-                    {b.isGap && <span className="text-[10.5px] font-medium text-danger uppercase tracking-wide">Gap</span>}
-                  </div>
-                  <p className="text-[12px] text-ink-dim">
-                    {b.topTierCount} top-tier event{b.topTierCount === 1 ? "" : "s"} · {b.confirmedTopTierCount} confirmed
-                  </p>
-                  <ul className="text-[12px] text-ink-dim flex flex-col gap-0.5">
-                    {b.conferences.slice(0, 4).map((c) => {
-                      const { tier, score } = scoreConference(c);
-                      return (
-                        <li key={c.id} className="flex items-center justify-between gap-2">
-                          <span className="truncate">{c.name}</span>
-                          <TierBadge tier={tier} score={score} />
-                        </li>
-                      );
-                    })}
-                    {b.conferences.length > 4 && <li className="text-ink-faint">+{b.conferences.length - 4} more</li>}
-                  </ul>
-                </div>
+                  {b.label}
+                  {b.isGap && " ⚠"}
+                </button>
               ))}
             </div>
-          </section>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-[16px] font-semibold font-serif">Trip clustering opportunities</h2>
-            {clusters.length === 0 ? (
-              <p className="text-[13px] text-ink-faint">No clustering opportunities in the current dataset.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {clusters.map((cl, idx) => (
-                  <div key={idx} className="bg-teal text-white rounded-DEFAULT p-4 flex flex-col gap-3">
-                    <p className="text-[15px] font-semibold">
-                      💡 Travel Savings: {cl.conferences.length} {cl.region} conferences within {Math.ceil(cl.spanDays / 7)} weeks — pair these trips
-                    </p>
-                    <ul className="flex flex-col gap-1.5 bg-white/10 rounded-lg p-3">
-                      {cl.conferences.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between gap-2 text-[13.5px]">
-                          <span>
-                            {c.name} <span className="text-white/70">— {c.city}</span>
-                          </span>
-                          <span className="font-mono text-[11.5px] text-white/80 whitespace-nowrap">{formatDateRange(c.startDate, c.endDate)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+            {currentBucket && (
+              <div
+                className={`rounded-DEFAULT border p-4 flex flex-col gap-2.5 ${
+                  currentBucket.isGap ? "border-danger bg-danger-bg" : "border-line bg-paper-surface"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[13.5px] text-ink-dim">
+                    {currentBucket.topTierCount} top-tier event{currentBucket.topTierCount === 1 ? "" : "s"} · {currentBucket.confirmedTopTierCount} confirmed
+                  </span>
+                  {currentBucket.isGap && <span className="text-[11px] font-semibold text-danger uppercase tracking-wide">Coverage gap</span>}
+                </div>
+                <ul className="text-[13px] text-ink-dim flex flex-col gap-1.5">
+                  {currentBucket.conferences.map((c) => {
+                    const { tier, score } = scoreConference(c);
+                    return (
+                      <li key={c.id} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{c.name}</span>
+                        <TierBadge tier={tier} score={score} />
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
           </section>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-[16px] font-semibold font-serif">Coverage by rep</h2>
-            {repMap.size === 0 ? (
-              <p className="text-[13px] text-ink-faint">No one has been assigned to any conference yet — use “+ Add me” on the Conferences page.</p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {[...repMap.entries()].map(([rep, items]) => (
-                  <div key={rep} className="bg-paper-surface border border-line rounded-DEFAULT p-4">
-                    <p className="font-semibold text-[14px] mb-2">{rep}</p>
-                    <ul className="flex flex-col gap-1">
-                      {items.map((it) => {
-                        const conf = conferences.find((c) => c.id === it.conferenceId);
-                        if (!conf) return null;
-                        return (
-                          <li key={it.id} className="flex items-center justify-between text-[12.5px]">
-                            <span className="truncate">{conf.name}</span>
-                            <span className={`font-mono text-[10.5px] uppercase ${it.status === "confirmed" ? "text-teal" : "text-ink-faint"}`}>
-                              {it.status}
+          {otherClusters.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <button
+                onClick={() => setShowOtherClusters((s) => !s)}
+                className="self-start text-[13px] font-medium text-teal underline underline-offset-2"
+              >
+                {showOtherClusters ? "Hide" : `Show ${otherClusters.length} other clustering opportunit${otherClusters.length === 1 ? "y" : "ies"}`}
+              </button>
+              {showOtherClusters && (
+                <div className="flex flex-col gap-3">
+                  {otherClusters.map((cl, idx) => (
+                    <div key={idx} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-2">
+                      <p className="text-[13.5px] font-semibold">
+                        {cl.conferences.length} {cl.region} events within {cl.spanDays} days
+                      </p>
+                      <ul className="flex flex-col gap-1">
+                        {cl.conferences.map((c) => (
+                          <li key={c.id} className="flex items-center justify-between gap-2 text-[13px] text-ink-dim">
+                            <span>
+                              {c.name} — {c.city}
                             </span>
+                            <span className="font-mono text-[11.5px] whitespace-nowrap">{formatDateRange(c.startDate, c.endDate)}</span>
                           </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          <section className="flex flex-col gap-2">
+            <button
+              onClick={() => setShowRepCoverage((s) => !s)}
+              className="self-start text-[13px] font-medium text-teal underline underline-offset-2"
+            >
+              {showRepCoverage ? "Hide coverage by rep" : "Show coverage by rep"}
+            </button>
+            {showRepCoverage &&
+              (repMap.size === 0 ? (
+                <p className="text-[13px] text-ink-faint">No one has been assigned to any conference yet — use "+ Cover Event" on the Conferences page.</p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {[...repMap.entries()].map(([rep, items]) => (
+                    <div key={rep} className="bg-paper-surface border border-line rounded-DEFAULT p-4">
+                      <p className="font-semibold text-[14px] mb-2">{rep}</p>
+                      <ul className="flex flex-col gap-1">
+                        {items.map((it) => {
+                          const conf = conferences.find((c) => c.id === it.conferenceId);
+                          if (!conf) return null;
+                          return (
+                            <li key={it.id} className="flex items-center justify-between text-[12.5px]">
+                              <span className="truncate">{conf.name}</span>
+                              <span className={`font-mono text-[10.5px] uppercase ${it.status === "confirmed" ? "text-teal" : "text-ink-faint"}`}>
+                                {it.status}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ))}
           </section>
         </>
       )}

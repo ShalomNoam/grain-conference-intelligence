@@ -19,6 +19,23 @@ export function TierBadge({ tier, score }: { tier: Tier; score: number }) {
   );
 }
 
+const ICP_MATCH: Record<Tier, { emoji: string; label: string; className: string }> = {
+  S: { emoji: "⭐", label: "Top Fit", className: "bg-teal text-white" },
+  A: { emoji: "✓", label: "Good Fit", className: "bg-teal-bg text-teal" },
+  B: { emoji: "", label: "Consider", className: "bg-warn-bg text-warn-ink" },
+  C: { emoji: "", label: "Low Fit", className: "bg-paper-alt text-ink-faint" },
+};
+
+export function ICPMatchBadge({ tier }: { tier: Tier }) {
+  const m = ICP_MATCH[tier];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap ${m.className}`}>
+      {m.emoji && <span>{m.emoji}</span>}
+      {m.label}
+    </span>
+  );
+}
+
 const TEMP_STYLE: Record<Temperature, string> = {
   hot: "bg-danger-bg text-danger border-2 border-danger",
   warm: "bg-warn-bg text-warn-ink border-2 border-warn-ink",

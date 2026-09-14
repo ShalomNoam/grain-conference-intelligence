@@ -16,6 +16,17 @@ const TAG_PRESETS = [
 
 type Feedback = { kind: "success" | "review" | "error"; message: string } | null;
 
+// Pick the conference closest to "now" — the one a rep standing on a show
+// floor is most likely to be at — preferring an upcoming one over a past one.
+function nearestConference(list: Conference[]): Conference {
+  const now = Date.now();
+  const upcoming = list
+    .filter((c) => new Date(c.endDate).getTime() >= now)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  if (upcoming.length) return upcoming[0];
+  return [...list].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
+}
+
 export default function CapturePage() {
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [conferenceId, setConferenceId] = useState("");
@@ -43,7 +54,7 @@ export default function CapturePage() {
         if (saved && list.some((c) => c.id === saved)) {
           setConferenceId(saved);
         } else if (list.length) {
-          setConferenceId(list[0].id);
+          setConferenceId(nearestConference(list).id);
         }
       });
   }, []);
@@ -105,33 +116,26 @@ export default function CapturePage() {
     }
   }
 
+  const canSave = !submitting && name.trim() && company.trim() && conferenceId;
+
   return (
     <div className="flex flex-col gap-4 max-w-md mx-auto pb-28">
       <div>
         <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Field Capture</p>
         <h1 className="text-[22px] font-bold">Log who you just met</h1>
-        <p className="text-ink-dim text-[13.5px] mt-1">Name + company is enough to save. Everything else is optional.</p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <select
-          value={conferenceId}
-          onChange={(e) => setConferenceId(e.target.value)}
-          className="border border-line rounded-lg px-3 min-h-[48px] text-[16px] bg-paper-surface"
-        >
-          {conferences.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <input
-          value={rep}
-          onChange={(e) => setRep(e.target.value)}
-          placeholder="Your name"
-          className="border border-line rounded-lg px-3 min-h-[48px] text-[15px] bg-paper-surface text-ink-dim"
-        />
-      </div>
+      <select
+        value={conferenceId}
+        onChange={(e) => setConferenceId(e.target.value)}
+        className="border border-line rounded-lg px-3 min-h-[48px] text-[16px] bg-paper-surface"
+      >
+        {conferences.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
 
       {feedback && (
         <div
@@ -154,7 +158,7 @@ export default function CapturePage() {
         <input
           value={company}
           onChange={(e) => setCompany(e.target.value)}
-          placeholder="Company"
+          placeholder="Company *"
           className="border border-line rounded-lg px-4 min-h-[48px] text-[16px]"
         />
 
@@ -182,40 +186,52 @@ export default function CapturePage() {
           </div>
         </div>
 
-        <div>
-          <p className="text-[13px] text-ink-dim font-medium mb-2">Quick tags</p>
-          <div className="flex flex-wrap gap-2">
-            {TAG_PRESETS.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleTag(tag)}
-                className={`px-3 min-h-[40px] rounded-full text-[13px] font-medium border transition-colors ${
-                  tags.includes(tag) ? "bg-gold text-white border-gold" : "border-line text-ink-dim"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="One-line note (optional) — what they said, what to remember"
-          rows={2}
-          className="border border-line rounded-lg px-4 py-3 text-[15px] resize-none"
-        />
-
         {!showMore ? (
-          <button type="button" onClick={() => setShowMore(true)} className="self-start text-[13px] text-teal underline underline-offset-2">
-            + Title / email
+          <button
+            type="button"
+            onClick={() => setShowMore(true)}
+            className="self-start text-[13.5px] font-medium text-ink-dim underline underline-offset-2"
+          >
+            + Add more details (optional)
           </button>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3 border-t border-line pt-4">
+            {!rep && (
+              <input
+                value={rep}
+                onChange={(e) => setRep(e.target.value)}
+                placeholder="Your name"
+                className="border border-line rounded-lg px-4 min-h-[48px] text-[15px] text-ink-dim"
+              />
+            )}
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Job title" className="border border-line rounded-lg px-4 min-h-[48px] text-[15px]" />
             <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="border border-line rounded-lg px-4 min-h-[48px] text-[15px]" />
+
+            <div>
+              <p className="text-[13px] text-ink-dim font-medium mb-2">Quick tags</p>
+              <div className="flex flex-wrap gap-2">
+                {TAG_PRESETS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 min-h-[40px] rounded-full text-[13px] font-medium border transition-colors ${
+                      tags.includes(tag) ? "bg-gold text-white border-gold" : "border-line text-ink-dim"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="One-line note — what they said, what to remember"
+              rows={2}
+              className="border border-line rounded-lg px-4 py-3 text-[15px] resize-none"
+            />
           </div>
         )}
       </div>
@@ -223,7 +239,7 @@ export default function CapturePage() {
       <div className="fixed bottom-16 md:bottom-0 inset-x-0 z-20 md:static bg-paper/95 backdrop-blur md:bg-transparent px-4 pb-3 pt-2 md:p-0">
         <button
           onClick={submit}
-          disabled={submitting || !name.trim() || !conferenceId}
+          disabled={!canSave}
           className="w-full max-w-md mx-auto block bg-ink text-white rounded-full min-h-[52px] text-[16px] font-bold disabled:opacity-40 shadow-lg"
         >
           {submitting ? "Saving…" : `Save & Sync Lead`}
