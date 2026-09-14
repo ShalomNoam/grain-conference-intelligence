@@ -6,14 +6,18 @@ import {
   setRepName as saveRepName,
   getApiKey,
   setApiKey as saveApiKey,
+  getApiProvider,
+  setApiProvider as saveApiProvider,
   getHubspotToken,
   setHubspotToken as saveHubspotToken,
 } from "@/lib/settings";
-import { detectProvider, PROVIDER_LABEL } from "@/lib/ai-provider";
+import { detectProvider, isAiProvider, ALL_PROVIDERS, PROVIDER_LABEL, type AiProvider } from "@/lib/ai-provider";
 
 export default function SettingsPage() {
   const [rep, setRep] = useState("");
   const [apiKey, setApiKeyState] = useState("");
+  const [manualProvider, setManualProvider] = useState<AiProvider | "">("");
+  const [showPicker, setShowPicker] = useState(false);
   const [hubspotToken, setHubspotTokenState] = useState("");
   const [sharedStorage, setSharedStorage] = useState<boolean | null>(null);
   const [saved, setSaved] = useState(false);
@@ -21,17 +25,30 @@ export default function SettingsPage() {
   useEffect(() => {
     setRep(getRepName());
     setApiKeyState(getApiKey());
+    const storedProvider = getApiProvider();
+    if (isAiProvider(storedProvider)) setManualProvider(storedProvider);
     setHubspotTokenState(getHubspotToken());
     fetch("/api/conferences")
       .then((r) => r.json())
       .then((d) => setSharedStorage(Boolean(d.sharedStorage)));
   }, []);
 
-  const provider = detectProvider(apiKey);
+  const detected = detectProvider(apiKey);
+  const effectiveProvider = manualProvider || detected || "";
+  const needsManualPick = Boolean(apiKey.trim()) && !effectiveProvider;
+
+  function onApiKeyChange(v: string) {
+    setApiKeyState(v);
+    // A new key invalidates whatever provider was picked for the old one —
+    // re-detect from scratch rather than silently keeping a stale override.
+    setManualProvider("");
+    setShowPicker(false);
+  }
 
   function save() {
     saveRepName(rep);
     saveApiKey(apiKey);
+    saveApiProvider(effectiveProvider);
     saveHubspotToken(hubspotToken);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -75,18 +92,56 @@ export default function SettingsPage() {
           <input
             type="password"
             value={apiKey}
-            onChange={(e) => setApiKeyState(e.target.value)}
-            placeholder="Paste your Gemini, Claude, or OpenAI key…"
+            onChange={(e) => onApiKeyChange(e.target.value)}
+            placeholder="Paste your Gemini, Claude, OpenAI, or OpenRouter key…"
             className="border border-line rounded-lg px-4 min-h-[48px] text-[14px] font-mono"
           />
-          {apiKey.trim() &&
-            (provider ? (
-              <span className="text-[12.5px] font-semibold text-teal">✓ Key recognized successfully ({PROVIDER_LABEL[provider]})</span>
-            ) : (
-              <span className="text-[12.5px] font-semibold text-danger">Key format not recognized — double-check for typos.</span>
-            ))}
+
+          {apiKey.trim() !== "" && (
+            <div className="flex flex-col gap-1.5">
+              {effectiveProvider ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[12.5px] font-semibold text-teal">
+                    ✓ Key recognized successfully ({PROVIDER_LABEL[effectiveProvider]})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPicker((s) => !s)}
+                    className="text-[11.5px] text-ink-faint underline underline-offset-2"
+                  >
+                    {showPicker ? "Cancel" : "Not right? Change provider"}
+                  </button>
+                </div>
+              ) : (
+                <span className="text-[12.5px] font-semibold text-warn-ink">
+                  We didn&apos;t auto-detect the provider — please choose one:
+                </span>
+              )}
+
+              {(needsManualPick || showPicker) && (
+                <select
+                  value={manualProvider}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setManualProvider(isAiProvider(v) ? v : "");
+                    setShowPicker(false);
+                  }}
+                  className="border border-line rounded-lg px-3 min-h-[44px] text-[13.5px] bg-paper-surface"
+                >
+                  <option value="">Choose provider…</option>
+                  {ALL_PROVIDERS.map((p) => (
+                    <option key={p} value={p}>
+                      {PROVIDER_LABEL[p]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
           <span className="text-[12px] text-ink-faint">
-            Powers AI relationship summaries. Paste any Gemini, Claude, or OpenAI key — the provider is detected automatically.
+            Powers AI relationship summaries. Paste any Gemini, Claude, OpenAI, or OpenRouter key — the provider is detected
+            automatically, or pick it yourself if we get it wrong.
           </span>
         </label>
 

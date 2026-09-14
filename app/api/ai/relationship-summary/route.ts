@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { computeRelationshipArc } from "@/lib/nudge";
 import { buildRelationshipSummaryPrompt } from "@/lib/ai-prompt";
-import { callAiProvider } from "@/lib/ai-provider";
+import { callAiProvider, isAiProvider } from "@/lib/ai-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +45,8 @@ export async function POST(req: Request) {
   const conferenceNameById = Object.fromEntries(db.conferences.map((c) => [c.id, c.name]));
   const prompt = buildRelationshipSummaryPrompt(contact, interactions, arc, conferenceNameById);
 
-  const result = await callAiProvider(apiKey, prompt);
+  const providerHeader = req.headers.get("x-ai-provider") ?? "";
+  const result = await callAiProvider(apiKey, prompt, { provider: isAiProvider(providerHeader) ? providerHeader : undefined });
   if (!result.text) {
     return NextResponse.json({ error: result.error ?? "The AI provider returned no content." }, { status: 502 });
   }

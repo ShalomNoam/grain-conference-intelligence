@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Contact, Conference, Interaction, PendingMatch } from "@/lib/types";
 import { signalForArc, type RelationshipArc } from "@/lib/nudge";
 import { SignalBadge, TemperatureBadge } from "@/components/Badges";
-import { getApiKey, getHubspotToken } from "@/lib/settings";
+import { getApiKey, getApiProvider, getHubspotToken } from "@/lib/settings";
 
 interface EnrichedContact {
   contact: Contact;
@@ -66,12 +66,13 @@ export default function ContactsPage() {
 
   async function getAiSummary(contactId: string) {
     const key = getApiKey();
+    const provider = getApiProvider();
     setAiLoading(contactId);
     setAiResult((r) => ({ ...r, [contactId]: {} }));
     try {
       const res = await fetch("/api/ai/relationship-summary", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-ai-key": key },
+        headers: { "Content-Type": "application/json", "x-ai-key": key, "x-ai-provider": provider },
         body: JSON.stringify({ contactId }),
       });
       const data = await res.json();

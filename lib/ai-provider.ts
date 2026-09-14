@@ -1,26 +1,37 @@
 // A rep pastes one API key into Settings — no provider picker, no model
-// picker. We detect the provider from the key's own shape (every major LLM
-// vendor prefixes keys distinctly) and route to the right endpoint/format
-// automatically. This is the "field, not form" version of BYO-key: the
-// fewer decisions a busy sales rep has to make correctly, the more likely
-// the AI feature actually gets configured at all.
+// picker, by default. We detect the provider from the key's own shape
+// (every major LLM vendor prefixes keys distinctly) and route to the right
+// endpoint/format automatically. When a key doesn't match any known shape,
+// the UI never blocks saving it — it falls back to letting the rep pick the
+// provider manually from a short list, and that choice (not a guess) is
+// what gets sent on every AI call from then on.
 
-export type AiProvider = "gemini" | "anthropic" | "openai";
+export type AiProvider = "gemini" | "anthropic" | "openai" | "openrouter";
+
+export const ALL_PROVIDERS: AiProvider[] = ["gemini", "anthropic", "openai", "openrouter"];
 
 export const PROVIDER_LABEL: Record<AiProvider, string> = {
   gemini: "Gemini",
   anthropic: "Claude",
   openai: "OpenAI",
+  openrouter: "OpenRouter",
 };
 
+export function isAiProvider(v: string): v is AiProvider {
+  return (ALL_PROVIDERS as string[]).includes(v);
+}
+
+// Order matters: check the more specific prefixes before the generic ones
+// they'd otherwise be swallowed by (sk-ant- / sk-or- / sk-proj- / sk-admin-
+// all also start with the bare "sk-" that plain OpenAI keys use).
 export function detectProvider(rawKey: string): AiProvider | null {
   const key = rawKey.trim();
   if (!key) return null;
-  // Anthropic and OpenAI both use "sk-" prefixes, so the more specific
-  // "sk-ant-" check must run before the generic OpenAI "sk-" fallback.
-  if (key.startsWith("AIzaSy")) return "gemini";
   if (key.startsWith("sk-ant-")) return "anthropic";
-  if (key.startsWith("sk-proj-") || key.startsWith("sk-")) return "openai";
+  if (key.startsWith("sk-or-")) return "openrouter";
+  if (key.startsWith("sk-proj-") || key.startsWith("sk-admin-")) return "openai";
+  if (key.startsWith("AIza") || key.startsWith("AQ.")) return "gemini";
+  if (key.startsWith("sk-")) return "openai";
   return null;
 }
 
@@ -30,30 +41,43 @@ export interface AiCallResult {
   provider?: AiProvider;
 }
 
-async function describeHttpError(res: Response, name: string): Promise<string> {
+// A clean, rep-facing message — no raw JSON dumped into the UI. The full
+// response body is still logged server-side for whoever debugs this later.
+async function friendlyHttpError(res: Response, providerLabel: string): Promise<string> {
   const body = await res.text().catch(() => "");
-  return `${name} API error (${res.status}). Check the key in Settings. ${body.slice(0, 300)}`;
+  if (body) console.error(`[ai-provider] ${providerLabel} HTTP ${res.status}:`, body.slice(0, 2000));
+  return `Error connecting to ${providerLabel}: please verify the key is valid and has available credit. (HTTP ${res.status})`;
 }
 
 // Server-side only (needs to reach each vendor's API directly). Picks the
 // endpoint, auth header, request body shape, and response parsing for
-// whichever provider the key belongs to, and normalizes all three down to
+// whichever provider applies, and normalizes all four down to
 // { text } | { error } so callers never need per-provider branching.
+// `opts.provider` — when the client already knows the provider (auto-detected
+// at save time, or picked manually because detection failed) — is trusted
+// over a fresh detection pass, since the rep's own choice should always win.
 export async function callAiProvider(
-  apiKey: string,
+  rawApiKey: string,
   prompt: string,
-  opts: { maxTokens?: number; temperature?: number } = {}
+  opts: { maxTokens?: number; temperature?: number; provider?: AiProvider | null } = {}
 ): Promise<AiCallResult> {
-  const provider = detectProvider(apiKey);
+  const apiKey = rawApiKey.trim();
+  const provider = opts.provider ?? detectProvider(apiKey);
   const maxTokens = opts.maxTokens ?? 220;
   const temperature = opts.temperature ?? 0.4;
+
+  if (!apiKey) {
+    return { error: "No API key configured. Add one in Settings to enable AI summaries." };
+  }
 
   if (!provider) {
     return {
       error:
-        "This doesn't look like a Gemini, Claude, or OpenAI key. Gemini keys start with AIzaSy, Claude keys with sk-ant-, OpenAI keys with sk-.",
+        "We couldn't tell which AI provider this key belongs to. Open Settings and pick the provider manually from the dropdown under the key field.",
     };
   }
+
+  const label = PROVIDER_LABEL[provider];
 
   try {
     if (provider === "gemini") {
@@ -68,7 +92,7 @@ export async function callAiProvider(
           }),
         }
       );
-      if (!res.ok) return { error: await describeHttpError(res, "Gemini"), provider };
+      if (!res.ok) return { error: await friendlyHttpError(res, label), provider };
       const data = await res.json();
       const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) return { error: "Gemini returned no content (it may have blocked the prompt).", provider };
@@ -79,21 +103,42 @@ export async function callAiProvider(
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "content-type": "application/json",
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-5",
+          model: "claude-3-5-sonnet-latest",
           max_tokens: maxTokens,
           temperature,
           messages: [{ role: "user", content: prompt }],
         }),
       });
-      if (!res.ok) return { error: await describeHttpError(res, "Claude"), provider };
+      if (!res.ok) return { error: await friendlyHttpError(res, label), provider };
       const data = await res.json();
       const text: string | undefined = data?.content?.[0]?.text;
       if (!text) return { error: "Claude returned no content.", provider };
+      return { text: text.trim(), provider };
+    }
+
+    if (provider === "openrouter") {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o",
+          max_tokens: maxTokens,
+          temperature,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      if (!res.ok) return { error: await friendlyHttpError(res, label), provider };
+      const data = await res.json();
+      const text: string | undefined = data?.choices?.[0]?.message?.content;
+      if (!text) return { error: "OpenRouter returned no content.", provider };
       return { text: text.trim(), provider };
     }
 
@@ -111,12 +156,12 @@ export async function callAiProvider(
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    if (!res.ok) return { error: await describeHttpError(res, "OpenAI"), provider };
+    if (!res.ok) return { error: await friendlyHttpError(res, label), provider };
     const data = await res.json();
     const text: string | undefined = data?.choices?.[0]?.message?.content;
     if (!text) return { error: "OpenAI returned no content.", provider };
     return { text: text.trim(), provider };
   } catch (err) {
-    return { error: `Could not reach ${PROVIDER_LABEL[provider]}: ${err instanceof Error ? err.message : String(err)}`, provider };
+    return { error: `Could not reach ${label}: ${err instanceof Error ? err.message : String(err)}`, provider };
   }
 }
