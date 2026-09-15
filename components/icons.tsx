@@ -120,6 +120,41 @@ export const IconMail = ({ className }: P) => (
   </svg>
 );
 
+export const IconSearch = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.6" />
+    <path d="m19.5 19.5-4.3-4.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+export const IconFileText = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M6.5 3.5h8l4 4v12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M14 3.5V8h4.2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M8.5 12.5h7M8.5 15.8h7M8.5 9.2h2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+export const IconX = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+export const IconCopy = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <rect x="8.5" y="8.5" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+export const IconExternalLink = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M9.5 6.5h-3a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M13.5 4.5h6v6M19 5l-8.5 8.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const IconSpark = ({ className }: P) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
     <path
