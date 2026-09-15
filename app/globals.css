@@ -29,11 +29,21 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 0%, rgba(224, 236, 253, 0.45) 0%, rgba(248, 250, 252, 0) 65%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(224, 236, 253, 0.4) 0%, rgba(248, 250, 252, 0) 70%);
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Horizontal route stepper (Planning hero) scrolls on mobile without a
+   visible scrollbar cluttering the card. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 ::selection {

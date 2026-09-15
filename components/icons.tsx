@@ -57,6 +57,43 @@ export const IconCheck = ({ className }: P) => (
   </svg>
 );
 
+export const IconRoute = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="5" cy="6" r="2.3" stroke="currentColor" strokeWidth="1.6" />
+    <circle cx="19" cy="18" r="2.3" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M7 7.5c0 4 3 3 5 5s3 4 5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2.4 2.4" />
+  </svg>
+);
+
+export const IconTrendingDown = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M4 6.5 10 12l3.5-3.5L20 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15 15h5v-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const IconAlertCircle = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M12 7.5v5.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <circle cx="12" cy="16.3" r="0.9" fill="currentColor" />
+  </svg>
+);
+
+export const IconDownload = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M12 3.5v11.5M8 11.5 12 16l4-4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M4.5 17v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+
+export const IconMail = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <rect x="3.5" y="5.5" width="17" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M4.5 7 12 12.5 19.5 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const IconSpark = ({ className }: P) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
     <path

@@ -49,6 +49,19 @@ export function detectClusters(conferences: Conference[], windowDays = 28): Conf
   return clusters.sort((a, b) => new Date(a.conferences[0].startDate).getTime() - new Date(b.conferences[0].startDate).getTime());
 }
 
+// A cluster of N events combined into one trip genuinely saves N-1 round
+// trips — that part is exact, not estimated. The dollar figure is not:
+// we have no real airfare data, so it's a flat illustrative per-flight
+// assumption (like the FX calculator's "illustrative" spread math) rather
+// than a number dressed up as fact. Surfaced with "(est.)" in the UI so it
+// never reads as a real quote.
+export const ASSUMED_FLIGHT_COST_USD = 650;
+
+export function estimateTripSavings(cluster: ConferenceCluster): { flightsSaved: number; estimatedSavingsUsd: number } {
+  const flightsSaved = Math.max(0, cluster.conferences.length - 1);
+  return { flightsSaved, estimatedSavingsUsd: flightsSaved * ASSUMED_FLIGHT_COST_USD };
+}
+
 // ── Quarter buckets: where are we under-invested relative to ICP fit? ───
 export interface QuarterBucket {
   key: string; // e.g. "2026-Q4"
