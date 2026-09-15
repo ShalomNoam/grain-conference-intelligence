@@ -394,12 +394,12 @@ export default function CalculatorPage() {
           <div>
             <span className="text-[12.5px] text-ink-dim mb-1.5 block">Currency direction</span>
             <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
-              <label className="flex flex-col gap-1">
+              <label className="flex flex-col gap-1 min-w-0">
                 <span className="text-[10px] text-ink-faint">Sell in</span>
                 <select
                   value={baseCcy}
                   onChange={(e) => onBaseChange(e.target.value as CcyCode)}
-                  className="border border-line rounded-md px-2 py-2 text-[13px] bg-white"
+                  className="w-full min-w-0 border border-line rounded-md px-2 py-2 text-[13px] bg-white"
                 >
                   {CCY_CODES.map((c) => (
                     <option key={c} value={c}>
@@ -409,12 +409,12 @@ export default function CalculatorPage() {
                 </select>
               </label>
               <span className="text-ink-faint pb-2">→</span>
-              <label className="flex flex-col gap-1">
+              <label className="flex flex-col gap-1 min-w-0">
                 <span className="text-[10px] text-ink-faint">Settle in</span>
                 <select
                   value={quoteCcy}
                   onChange={(e) => onQuoteChange(e.target.value as CcyCode)}
-                  className="border border-line rounded-md px-2 py-2 text-[13px] bg-white"
+                  className="w-full min-w-0 border border-line rounded-md px-2 py-2 text-[13px] bg-white"
                 >
                   {CCY_CODES.map((c) => (
                     <option key={c} value={c}>
