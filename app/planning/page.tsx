@@ -62,8 +62,8 @@ export default function PlanningPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Coverage Planning</p>
-        <h1 className="text-[26px] font-bold">Where is the year covered — and where isn&apos;t it?</h1>
+        <p className="text-[11px] uppercase tracking-wide font-semibold text-[#2563EB] mb-1">Coverage Planning</p>
+        <h1 className="text-[28px] font-extrabold bg-grain-headline bg-clip-text text-transparent">Where is the year covered — and where isn&apos;t it?</h1>
         <p className="text-ink-dim text-[14.5px] max-w-[70ch] mt-1">
           Coverage by quarter, gaps against top-tier (S/A) events, and conferences close enough in time and place to combine into one
           trip.
@@ -75,9 +75,9 @@ export default function PlanningPage() {
       ) : (
         <>
           {heroCluster && (
-            <section className="bg-teal text-white rounded-DEFAULT p-5 flex flex-col gap-3">
+            <section className="bg-gradient-to-br from-[#1A234B] to-[#2A4494] text-white rounded-2xl p-5 flex flex-col gap-3 shadow-[0_8px_30px_-8px_rgba(26,35,75,0.35)]">
               <div>
-                <p className="text-[11px] font-mono uppercase tracking-wide text-white/70 mb-1">Top trip-clustering opportunity</p>
+                <p className="text-[11px] uppercase tracking-wide font-semibold text-[#93C5FD] mb-1">Top trip-clustering opportunity</p>
                 <p className="text-[17px] font-semibold leading-snug">
                   {heroCluster.conferences.length === 2 ? (
                     <>💡 Combine {heroCluster.conferences.map((c) => c.name).join(" & ")} — one trip instead of two.</>
@@ -91,7 +91,7 @@ export default function PlanningPage() {
               </div>
               <button
                 onClick={() => setHeroExpanded((s) => !s)}
-                className="self-start bg-white text-teal font-semibold text-[13.5px] rounded-full px-4 py-2 hover:opacity-90"
+                className="self-start bg-white text-[#2563EB] font-semibold text-[13.5px] rounded-lg px-4 py-2 hover:bg-blue-50/80 transition-colors"
               >
                 {heroExpanded ? "Hide Trip Plan" : "Review Trip Plan"}
               </button>
@@ -117,12 +117,12 @@ export default function PlanningPage() {
                 <button
                   key={b.key}
                   onClick={() => setActiveQuarter(b.key)}
-                  className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold border transition-colors ${
+                  className={`shrink-0 rounded-lg px-4 py-2 text-[13px] font-semibold border transition-colors ${
                     activeQuarter === b.key
-                      ? "bg-ink text-white border-ink"
+                      ? "bg-[#1A234B] text-white border-[#1A234B]"
                       : b.isGap
                       ? "border-danger text-danger"
-                      : "border-line text-ink-dim"
+                      : "border-line text-ink-dim bg-white/80"
                   }`}
                 >
                   {b.label}
@@ -169,7 +169,7 @@ export default function PlanningPage() {
               {showOtherClusters && (
                 <div className="flex flex-col gap-3">
                   {otherClusters.map((cl, idx) => (
-                    <div key={idx} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-2">
+                    <div key={idx} className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-2">
                       <p className="text-[13.5px] font-semibold">
                         {cl.conferences.length} {cl.region} events within {cl.spanDays} days
                       </p>
@@ -203,7 +203,7 @@ export default function PlanningPage() {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {[...repMap.entries()].map(([rep, items]) => (
-                    <div key={rep} className="bg-paper-surface border border-line rounded-DEFAULT p-4">
+                    <div key={rep} className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4">
                       <p className="font-semibold text-[14px] mb-2">{rep}</p>
                       <ul className="flex flex-col gap-1">
                         {items.map((it) => {

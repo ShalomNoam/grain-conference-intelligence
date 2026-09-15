@@ -107,8 +107,8 @@ export default function ContactsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Cross-Conference Contacts</p>
-        <h1 className="text-[26px] font-bold">Same person, different show — is it warming up?</h1>
+        <p className="text-[11px] uppercase tracking-wide font-semibold text-[#2563EB] mb-1">Cross-Conference Contacts</p>
+        <h1 className="text-[28px] font-extrabold bg-grain-headline bg-clip-text text-transparent">Same person, different show — is it warming up?</h1>
         <p className="text-ink-dim text-[14.5px] max-w-[70ch] mt-1">
           Every contact met at more than one conference gets a relationship arc: a rule-based read (instant, always on) plus an optional
           AI narrative that reads between the notes.
@@ -173,7 +173,7 @@ export default function ContactsPage() {
 
             if (isSingleTouch) {
               return (
-                <div key={contact.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex items-center justify-between gap-3">
+                <div key={contact.id} className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex items-center justify-between gap-3">
                   <div>
                     <p className="font-serif font-semibold text-[15.5px]">{contact.displayName}</p>
                     <p className="text-[12.5px] text-ink-dim">
@@ -188,7 +188,7 @@ export default function ContactsPage() {
             }
 
             return (
-              <div key={contact.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3">
+              <div key={contact.id} className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
                     <p className="font-serif font-semibold text-[17px]">{contact.displayName}</p>

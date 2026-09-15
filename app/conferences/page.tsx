@@ -81,8 +81,8 @@ export default function ConferencesPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Conference List &amp; Scoring</p>
-        <h1 className="text-[26px] font-bold">Which shows are actually worth Grain&apos;s time?</h1>
+        <p className="text-[11px] uppercase tracking-wide font-semibold text-[#2563EB] mb-1">Conference List &amp; Scoring</p>
+        <h1 className="text-[28px] font-extrabold bg-grain-headline bg-clip-text text-transparent">Which shows are actually worth Grain&apos;s time?</h1>
         <p className="text-ink-dim text-[14.5px] max-w-[70ch] mt-1">
           {conferences.length} sample events across payments, FX/treasury, travel and adjacent fintech — ranked against Grain&apos;s ICP,
           not just sorted by headcount.
@@ -100,7 +100,9 @@ export default function ConferencesPage() {
           <button
             onClick={() => setShowMoreFilters((s) => !s)}
             className={`shrink-0 text-[13.5px] font-medium rounded-lg px-4 min-h-[46px] border transition-colors ${
-              showMoreFilters || activeFilterCount > 0 ? "border-ink bg-ink text-white" : "border-line text-ink-dim bg-paper-surface"
+              showMoreFilters || activeFilterCount > 0
+                ? "border-[#1A234B] bg-[#1A234B] text-white"
+                : "border-[#93C5FD] text-[#2563EB] bg-white/80 hover:bg-blue-50/50"
             }`}
           >
             Filter &amp; Sort{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
@@ -108,7 +110,7 @@ export default function ConferencesPage() {
         </div>
 
         {showMoreFilters && (
-          <div className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3">
+          <div className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <select value={vertical} onChange={(e) => setVertical(e.target.value)} className="border border-line rounded-md px-2 py-2.5 text-[13.5px] bg-transparent">
                 <option value="all">All verticals</option>
@@ -166,9 +168,9 @@ export default function ConferencesPage() {
             const covering = coverage.filter((c) => c.conferenceId === conf.id);
             const isCovered = covering.length > 0;
             return (
-              <div key={conf.id} className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-3 h-full">
+              <div key={conf.id} className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-3 h-full">
                 <div className="flex flex-col gap-1">
-                  <h3 className="font-serif font-bold text-[17px] leading-snug">{conf.name}</h3>
+                  <h3 className="font-bold text-[17px] leading-snug text-ink">{conf.name}</h3>
                   <p className="text-[13px] text-ink-dim">
                     {formatDateRange(conf.startDate, conf.endDate)} · {conf.city}, {conf.country}
                   </p>
@@ -183,7 +185,7 @@ export default function ConferencesPage() {
                     <button
                       onClick={() => quickCover(conf.id)}
                       disabled={busyId === conf.id}
-                      className="w-full text-[13.5px] font-semibold text-white bg-teal rounded-full px-4 py-2.5 hover:opacity-90 disabled:opacity-50"
+                      className="w-full text-[13.5px] font-semibold text-white bg-gradient-to-r from-[#3B82F6] to-[#2563EB] rounded-lg px-4 py-2.5 shadow-sm hover:shadow-md hover:from-[#2563EB] hover:to-[#1D4ED8] transition-all disabled:opacity-50"
                     >
                       + Cover Event
                     </button>

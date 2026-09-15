@@ -121,8 +121,8 @@ export default function CapturePage() {
   return (
     <div className="flex flex-col gap-4 max-w-md mx-auto pb-28">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Field Capture</p>
-        <h1 className="text-[22px] font-bold">Log who you just met</h1>
+        <p className="text-[11px] uppercase tracking-wide font-semibold text-[#2563EB] mb-1">Field Capture</p>
+        <h1 className="text-[24px] font-extrabold bg-grain-headline bg-clip-text text-transparent">Log who you just met</h1>
       </div>
 
       <select
@@ -147,7 +147,7 @@ export default function CapturePage() {
         </div>
       )}
 
-      <div className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-4">
+      <div className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-4">
         <input
           autoFocus
           value={name}
@@ -240,7 +240,7 @@ export default function CapturePage() {
         <button
           onClick={submit}
           disabled={!canSave}
-          className="w-full max-w-md mx-auto block bg-ink text-white rounded-full min-h-[52px] text-[16px] font-bold disabled:opacity-40 shadow-lg"
+          className="w-full max-w-md mx-auto block bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white rounded-lg min-h-[52px] text-[16px] font-bold shadow-lg hover:shadow-xl hover:from-[#2563EB] hover:to-[#1D4ED8] transition-all disabled:opacity-40"
         >
           {submitting ? "Saving…" : `Save & Sync Lead`}
         </button>

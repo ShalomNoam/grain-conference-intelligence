@@ -1,11 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html, body {
-  background: theme('colors.paper.DEFAULT');
+  background: linear-gradient(180deg, #F4F8FD 0%, #FFFFFF 45%, #EBF3FC 100%);
   color: theme('colors.ink.DEFAULT');
+  min-height: 100%;
 }
 
 body {
@@ -14,8 +15,21 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: theme('fontFamily.serif');
+  font-family: theme('fontFamily.sans');
+  font-weight: 700;
   text-wrap: balance;
+}
+
+/* The signature Grain mesh: a soft glowing ice-blue blob fixed behind the
+   page content, independent of scroll — matches the production site's
+   hero backdrop without every page needing its own gradient container. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 10%, rgba(219, 234, 254, 0.6) 0%, rgba(255, 255, 255, 0) 70%);
 }
 
 .tabular {
@@ -23,7 +37,7 @@ h1, h2, h3 {
 }
 
 ::selection {
-  background: theme('colors.gold.light');
+  background: theme('colors.teal.bg');
 }
 
 input, textarea, select {

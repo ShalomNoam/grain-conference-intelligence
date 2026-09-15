@@ -57,14 +57,14 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 max-w-md">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-gold-ink mb-1">Settings</p>
-        <h1 className="text-[24px] font-bold">Your keys, your browser</h1>
+        <p className="text-[11px] uppercase tracking-wide font-semibold text-[#2563EB] mb-1">Settings</p>
+        <h1 className="text-[26px] font-extrabold bg-grain-headline bg-clip-text text-transparent">Your keys, your browser</h1>
         <p className="text-ink-dim text-[13.5px] mt-1">
           Everything stored locally (browser only) and sent per-request to the server proxy — never hardcoded, never in a database.
         </p>
       </div>
 
-      <div className="bg-paper-surface border border-line rounded-DEFAULT p-4 flex flex-col gap-2">
+      <div className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-2">
         <p className="text-[13px] font-semibold">Team data storage</p>
         <p className="text-[12.5px] text-ink-dim leading-relaxed">
           {sharedStorage === null
@@ -162,7 +162,7 @@ export default function SettingsPage() {
 
       <button
         onClick={save}
-        className="bg-ink text-white rounded-full min-h-[52px] text-[16px] font-bold disabled:opacity-50 transition-opacity"
+        className="bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white rounded-lg min-h-[52px] text-[16px] font-bold shadow-sm hover:shadow-md hover:from-[#2563EB] hover:to-[#1D4ED8] transition-all"
       >
         {saved ? "✓ Saved" : "Save Settings"}
       </button>

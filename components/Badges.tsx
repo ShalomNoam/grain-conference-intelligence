@@ -20,8 +20,8 @@ export function TierBadge({ tier, score }: { tier: Tier; score: number }) {
 }
 
 const ICP_MATCH: Record<Tier, { emoji: string; label: string; className: string }> = {
-  S: { emoji: "⭐", label: "Top Fit", className: "bg-teal text-white" },
-  A: { emoji: "✓", label: "Good Fit", className: "bg-teal-bg text-teal" },
+  S: { emoji: "⭐", label: "Top Fit", className: "bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white shadow-sm" },
+  A: { emoji: "✓", label: "Good Fit", className: "bg-blue-50 text-blue-700 border border-blue-200/60" },
   B: { emoji: "", label: "Consider", className: "bg-warn-bg text-warn-ink" },
   C: { emoji: "", label: "Low Fit", className: "bg-paper-alt text-ink-faint" },
 };
@@ -29,7 +29,7 @@ const ICP_MATCH: Record<Tier, { emoji: string; label: string; className: string 
 export function ICPMatchBadge({ tier }: { tier: Tier }) {
   const m = ICP_MATCH[tier];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap ${m.className}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${m.className}`}>
       {m.emoji && <span>{m.emoji}</span>}
       {m.label}
     </span>
