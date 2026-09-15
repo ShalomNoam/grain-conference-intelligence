@@ -19,7 +19,6 @@ export default function SettingsPage() {
   const [manualProvider, setManualProvider] = useState<AiProvider | "">("");
   const [showPicker, setShowPicker] = useState(false);
   const [hubspotToken, setHubspotTokenState] = useState("");
-  const [sharedStorage, setSharedStorage] = useState<boolean | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -28,9 +27,6 @@ export default function SettingsPage() {
     const storedProvider = getApiProvider();
     if (isAiProvider(storedProvider)) setManualProvider(storedProvider);
     setHubspotTokenState(getHubspotToken());
-    fetch("/api/conferences")
-      .then((r) => r.json())
-      .then((d) => setSharedStorage(Boolean(d.sharedStorage)));
   }, []);
 
   const detected = detectProvider(apiKey);
@@ -61,17 +57,6 @@ export default function SettingsPage() {
         <h1 className="text-[26px] font-extrabold bg-grain-headline bg-clip-text text-transparent">Your keys, your browser</h1>
         <p className="text-ink-dim text-[13.5px] mt-1">
           Everything stored locally (browser only) and sent per-request to the server proxy — never hardcoded, never in a database.
-        </p>
-      </div>
-
-      <div className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-2">
-        <p className="text-[13px] font-semibold">Team data storage</p>
-        <p className="text-[12.5px] text-ink-dim leading-relaxed">
-          {sharedStorage === null
-            ? "Checking…"
-            : sharedStorage
-            ? "✓ Shared storage enabled (Upstash Redis) — everyone sees the same data."
-            : "⚠️ Demo mode — data on this instance only. Add Upstash Redis for team sharing (see README)."}
         </p>
       </div>
 
