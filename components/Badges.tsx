@@ -19,18 +19,20 @@ export function TierBadge({ tier, score }: { tier: Tier; score: number }) {
   );
 }
 
-const ICP_MATCH: Record<Tier, { emoji: string; label: string; className: string }> = {
-  S: { emoji: "⭐", label: "Top Fit", className: "bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white shadow-sm" },
-  A: { emoji: "✓", label: "Good Fit", className: "bg-blue-50 text-blue-700 border border-blue-200/60" },
-  B: { emoji: "", label: "Consider", className: "bg-warn-bg text-warn-ink" },
-  C: { emoji: "", label: "Low Fit", className: "bg-paper-alt text-ink-faint" },
+// No emoji/sparkles — a clean typographic pill only. Top Fit is the
+// dominant solid-indigo treatment; the rest step down in visual weight
+// so the eye lands on Top Fit first without the others disappearing.
+const ICP_MATCH: Record<Tier, { label: string; className: string }> = {
+  S: { label: "Top Fit", className: "bg-brand-dark text-white" },
+  A: { label: "Good Fit", className: "bg-blue-50 text-blue-700 border border-blue-200/60" },
+  B: { label: "Consider", className: "bg-warn-bg text-warn-ink" },
+  C: { label: "Low Fit", className: "bg-paper-alt text-ink-faint" },
 };
 
 export function ICPMatchBadge({ tier }: { tier: Tier }) {
   const m = ICP_MATCH[tier];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${m.className}`}>
-      {m.emoji && <span>{m.emoji}</span>}
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide whitespace-nowrap ${m.className}`}>
       {m.label}
     </span>
   );

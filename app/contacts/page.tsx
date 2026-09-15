@@ -220,9 +220,14 @@ export default function ContactsPage() {
                   <button
                     onClick={() => getAiSummary(contact.id)}
                     disabled={aiLoading === contact.id}
-                    className="flex-1 text-[13.5px] font-semibold text-white bg-gold rounded-full px-4 py-2.5 hover:opacity-90 disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-1.5 text-[13.5px] font-semibold text-white bg-gold rounded-full px-4 py-2.5 hover:opacity-90 disabled:opacity-50"
                   >
-                    {aiLoading === contact.id ? "Thinking…" : "✨ Generate AI Follow-up Draft"}
+                    {aiLoading !== contact.id && (
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="currentColor" aria-hidden>
+                        <path d="M8 1.5l1.2 3.3L12.5 6l-3.3 1.2L8 10.5l-1.2-3.3L3.5 6l3.3-1.2L8 1.5z" />
+                      </svg>
+                    )}
+                    {aiLoading === contact.id ? "Thinking…" : "Generate AI Follow-up Draft"}
                   </button>
                   <div className="relative shrink-0">
                     <button

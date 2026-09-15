@@ -101,7 +101,7 @@ export default function ConferencesPage() {
             onClick={() => setShowMoreFilters((s) => !s)}
             className={`shrink-0 text-[13.5px] font-medium rounded-lg px-4 min-h-[46px] border transition-colors ${
               showMoreFilters || activeFilterCount > 0
-                ? "border-[#1A234B] bg-[#1A234B] text-white"
+                ? "border-[#111827] bg-[#111827] text-white"
                 : "border-[#93C5FD] text-[#2563EB] bg-white/80 hover:bg-blue-50/50"
             }`}
           >
@@ -164,28 +164,45 @@ export default function ConferencesPage() {
         <p className="text-ink-faint text-[13.5px]">No conferences match these filters.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map(({ conf, tier: t }) => {
+          {filtered.map(({ conf, tier: t, score }) => {
             const covering = coverage.filter((c) => c.conferenceId === conf.id);
             const isCovered = covering.length > 0;
             return (
-              <div key={conf.id} className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-4 flex flex-col gap-3 h-full">
-                <div className="flex flex-col gap-1">
-                  <h3 className="font-bold text-[17px] leading-snug text-ink">{conf.name}</h3>
-                  <p className="text-[13px] text-ink-dim">
+              <div
+                key={conf.id}
+                className="bg-white/90 backdrop-blur-sm rounded-2xl border border-card-border p-6 shadow-card hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full"
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-lg font-bold tracking-tight text-brand-dark leading-snug">{conf.name}</h3>
+                    <ICPMatchBadge tier={t} />
+                  </div>
+
+                  <p className="text-sm text-slate-500 font-medium">
                     {formatDateRange(conf.startDate, conf.endDate)} · {conf.city}, {conf.country}
                   </p>
+
+                  <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-brand-dark"
+                      style={{ width: `${Math.max(4, score)}%` }}
+                    />
+                  </div>
                 </div>
 
-                <ICPMatchBadge tier={t} />
-
-                <div className="mt-auto pt-3 border-t border-line">
+                <div className="mt-4 pt-4 border-t border-card-border">
                   {isCovered ? (
-                    <span className="text-[13px] text-ink-dim font-medium">✓ Covered by {covering.map((c) => c.repName).join(", ")}</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-blue-600" fill="none" aria-hidden>
+                        <path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Covered by {covering.map((c) => c.repName).join(", ")}
+                    </span>
                   ) : (
                     <button
                       onClick={() => quickCover(conf.id)}
                       disabled={busyId === conf.id}
-                      className="w-full text-[13.5px] font-semibold text-white bg-gradient-to-r from-[#3B82F6] to-[#2563EB] rounded-lg px-4 py-2.5 shadow-sm hover:shadow-md hover:from-[#2563EB] hover:to-[#1D4ED8] transition-all disabled:opacity-50"
+                      className="w-full bg-brand-dark hover:bg-[#0B0F19] text-white font-medium text-sm px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-[0.99] disabled:opacity-50"
                     >
                       + Cover Event
                     </button>

@@ -75,7 +75,7 @@ export default function PlanningPage() {
       ) : (
         <>
           {heroCluster && (
-            <section className="bg-gradient-to-br from-[#1A234B] to-[#2A4494] text-white rounded-2xl p-5 flex flex-col gap-3 shadow-[0_8px_30px_-8px_rgba(26,35,75,0.35)]">
+            <section className="bg-gradient-to-br from-[#111827] to-[#2A4494] text-white rounded-2xl p-5 flex flex-col gap-3 shadow-[0_8px_30px_-8px_rgba(26,35,75,0.35)]">
               <div>
                 <p className="text-[11px] uppercase tracking-wide font-semibold text-[#93C5FD] mb-1">Top trip-clustering opportunity</p>
                 <p className="text-[17px] font-semibold leading-snug">
@@ -119,7 +119,7 @@ export default function PlanningPage() {
                   onClick={() => setActiveQuarter(b.key)}
                   className={`shrink-0 rounded-lg px-4 py-2 text-[13px] font-semibold border transition-colors ${
                     activeQuarter === b.key
-                      ? "bg-[#1A234B] text-white border-[#1A234B]"
+                      ? "bg-[#111827] text-white border-[#111827]"
                       : b.isGap
                       ? "border-danger text-danger"
                       : "border-line text-ink-dim bg-white/80"

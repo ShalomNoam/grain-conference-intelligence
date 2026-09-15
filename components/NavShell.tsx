@@ -34,7 +34,7 @@ export default function NavShell({ children }: { children: React.ReactNode }) {
                   key={href}
                   href={href}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13.5px] font-medium transition-all ${
-                    active ? "bg-[#1A234B] text-white shadow-sm" : "text-ink-dim hover:bg-blue-50/60 hover:text-[#2563EB]"
+                    active ? "bg-[#111827] text-white shadow-sm" : "text-ink-dim hover:bg-blue-50/60 hover:text-[#2563EB]"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -66,7 +66,7 @@ export default function NavShell({ children }: { children: React.ReactNode }) {
         })}
       </nav>
 
-      <div className="hidden md:flex fixed bottom-4 right-4 z-40 bg-[#111A3A] text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg items-center gap-2 hover:opacity-95 transition-opacity cursor-default">
+      <div className="hidden md:flex fixed bottom-4 right-4 z-40 bg-[#111827] text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg items-center gap-2 hover:bg-[#1E293B] transition-colors cursor-default">
         <span className="w-1.5 h-1.5 rounded-full bg-[#60A5FA]" aria-hidden />
         Grain Sales Team
       </div>

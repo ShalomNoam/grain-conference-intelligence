@@ -12,16 +12,16 @@ const config: Config = {
         // existing bg-teal / text-teal / border-teal usage across the app
         // repaints automatically without touching each file.
         ink: {
-          DEFAULT: "#111A3A",
-          dim: "#556480",
-          faint: "#8B96AD",
+          DEFAULT: "#111827",
+          dim: "#64748B",
+          faint: "#94A3B8",
         },
         paper: {
           DEFAULT: "#FFFFFF",
           surface: "#FFFFFF",
-          alt: "#F4F8FD",
+          alt: "#F8FAFC",
         },
-        line: "#E7EEFA",
+        line: "#E2E8F0",
         navy: {
           DEFAULT: "#1A234B",
           dark: "#111836",
@@ -30,6 +30,16 @@ const config: Config = {
           DEFAULT: "#2563EB",
           bg: "#E0ECFD",
         },
+        // Executive B2B FinTech tokens — explicit names for spec-literal
+        // utility classes (bg-brand-dark, text-brand-text-muted, …),
+        // mirroring ink/ink-dim/teal above at the same values so both
+        // naming schemes stay in sync automatically.
+        brand: {
+          dark: "#111827",
+          "text-muted": "#64748B",
+          accent: "#2563EB",
+        },
+        "card-border": "rgba(226, 232, 240, 0.6)",
         gold: {
           DEFAULT: "#a8752c",
           ink: "#6e4d1c",
@@ -57,11 +67,14 @@ const config: Config = {
         DEFAULT: "16px",
       },
       backgroundImage: {
-        "grain-mesh": "radial-gradient(circle at 50% 10%, rgba(219, 234, 254, 0.6) 0%, rgba(255, 255, 255, 0) 70%)",
-        "grain-page": "linear-gradient(180deg, #F4F8FD 0%, #FFFFFF 45%, #EBF3FC 100%)",
+        "grain-mesh": "radial-gradient(circle at 50% 0%, rgba(224, 236, 253, 0.45) 0%, rgba(248, 250, 252, 0) 65%)",
+        "grain-page": "linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)",
         "grain-headline": "linear-gradient(90deg, #1E255E 0%, #2A4494 55%, #60A5FA 100%)",
         "grain-cta": "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)",
         "grain-cta-hover": "linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%)",
+      },
+      boxShadow: {
+        card: "0 10px 30px -5px rgba(17, 24, 39, 0.04), 0 2px 6px -1px rgba(17, 24, 39, 0.02)",
       },
     },
   },

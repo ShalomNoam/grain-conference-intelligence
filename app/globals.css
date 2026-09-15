@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 html, body {
-  background: linear-gradient(180deg, #F4F8FD 0%, #FFFFFF 45%, #EBF3FC 100%);
+  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
   color: theme('colors.ink.DEFAULT');
   min-height: 100%;
 }
@@ -29,7 +29,7 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 10%, rgba(219, 234, 254, 0.6) 0%, rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(224, 236, 253, 0.45) 0%, rgba(248, 250, 252, 0) 65%);
 }
 
 .tabular {
