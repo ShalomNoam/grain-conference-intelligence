@@ -17,8 +17,7 @@ the AI Builder home assignment.
 | **Planning** (`/planning`) | Coverage by quarter with gaps flagged against top-tier events, geographic/temporal clustering (trip-combining opportunities), and coverage-by-rep. |
 | **Capture** (`/capture`) | A mobile-first, thumb-speed lead form for the show floor — name + company is enough to save. |
 | **Contacts** (`/contacts`) | Every contact who's been met more than once, with a relationship-arc read (rule-based, instant) and an optional AI narrative summary, plus a HubSpot push per interaction. |
-| **Calculator** (`/calculator`) | Bonus, not one of the 7 core requirements: a live FX-hedging risk tool a rep pulls up mid-conversation — real exchange rate, an AI-drafted follow-up email, and a push to HubSpot. Links out to the stress-test tool below. |
-| **Stress-Test tool** (`/fx-stress-test.html`) | Bonus: a standalone, self-contained HTML tool (genuinely `<iframe>`-embeddable in Retool/Bubble/etc.) with a real historical-rate fetch, a rolling worst-case-window stress calculation, and its own AI analysis — see [Keys & storage](#keys--storage) for the trade-off this file makes. |
+| **Calculator** (`/calculator`) | Bonus, not one of the 7 core requirements: a live FX-hedging risk tool a rep pulls up mid-conversation — real ECB historical-rate chart, a rolling worst-case settlement-window stress calculation, an AI-drafted follow-up email, and a push to HubSpot, all on one page. |
 | **Settings** (`/settings`) | Where a rep pastes their own Gemini key and HubSpot token. Stored in the browser only — see [Keys & storage](#keys--storage). |
 
 ---
@@ -32,7 +31,7 @@ the AI Builder home assignment.
 | Planning view — coverage, under-investment, clustering | `/planning`, logic in `lib/planning.ts` |
 | Field lead-capture interface | `/capture` |
 | Cross-conference contact tracking + nudge | `/contacts`, matching in `lib/matching.ts`, arc/nudge in `lib/nudge.ts` |
-| At least one meaningful AI feature | Three real integrations, one multi-provider proxy (`lib/ai-provider.ts`): relationship-arc summarizer (`app/api/ai/relationship-summary`, in `/contacts`), FX follow-up email drafter (`app/api/ai/fx-followup`, in `/calculator`), and the stress-test tool's own analysis (`public/fx-stress-test.html`) |
+| At least one meaningful AI feature | Two real integrations, one multi-provider proxy (`lib/ai-provider.ts`): relationship-arc summarizer (`app/api/ai/relationship-summary`, in `/contacts`) and FX follow-up email drafter (`app/api/ai/fx-followup`, in `/calculator`) |
 | Path to push leads into HubSpot | Three routes for three entry points: `app/api/hubspot/push` (per-interaction, from `/capture` and `/contacts`), `push-lead` (from `/calculator`), `push-task` (a follow-up Task, from the `/contacts` AI drawer) |
 | Deployable without a complex build pipeline | Standard Next.js app, zero required env vars, one-click Vercel deploy — see [Deploy](#deploy-3-minutes-no-coding-required) |
 | API keys configurable by the user, not hardcoded | `lib/settings.ts` (localStorage only) — see [Keys & storage](#keys--storage) |
@@ -104,7 +103,7 @@ Edge cases handled explicitly:
 
 ## The AI features
 
-All three below share one multi-provider proxy (`lib/ai-provider.ts`): paste a
+Both below share one multi-provider proxy (`lib/ai-provider.ts`): paste a
 Gemini, Claude, OpenAI, or OpenRouter key into `/settings` and the provider is
 auto-detected from the key's own format — nothing is hardcoded to one vendor.
 The Gemini path defaults to `gemini-3.6-flash`.
@@ -129,20 +128,17 @@ requirement on this feature** — the other two exist but are lower-stakes.
 
 ### 2. FX follow-up email drafter
 
-`/calculator` → "Generate AI Follow-Up Email" turns the on-screen numbers
-(volume, pair, vertical, settlement window, profit-at-risk) into a short,
-prospect-ready email framed around rate-lock risk, not price. The vertical-aware
-talking point above it (`riskExplanation()`) is deterministic and instant — the
-AI call is reserved for the part a rep actually needs mid-conversation: a
-send-ready draft, not another template they'd have to rewrite by hand.
-
-### 3. Stress-test tool analysis
-
-`public/fx-stress-test.html` (linked from `/calculator`) runs the same
-multi-provider logic client-side to narrate a real historical worst-case-window
-calculation in plain language, after a deterministic formula-based read is
-already shown on screen. AI is additive here too — the numbers are real either
-way; AI just makes them easier to talk through live.
+`/calculator` fetches live ECB historical rates for the selected pair
+(`api.frankfurter.dev`, no key needed) and runs a real rolling worst-case
+settlement-window stress calculation — the actual worst swing that pair has
+made historically over the selected window, not an assumed volatility
+constant. "Generate AI Follow-Up Email" turns those real numbers (volume,
+pair, vertical, settlement window, the real profit-at-risk figure) into a
+short, prospect-ready email framed around rate-lock risk, not price. The
+vertical-aware talking point above it is deterministic and instant, grounded
+in the same real data — the AI call is reserved for the part a rep actually
+needs mid-conversation: a send-ready draft, not another template they'd have
+to rewrite by hand.
 
 ## Keys & storage
 
@@ -153,15 +149,6 @@ way; AI just makes them easier to talk through live.
   "configurable by the user, not hardcoded" constraint. A team that wants one
   shared key baked in as a deployment default can instead set `GEMINI_API_KEY`
   / `HUBSPOT_PRIVATE_APP_TOKEN` as server env vars — see `.env.example`.
-- **The standalone stress-test tool is the one exception.** `/fx-stress-test.html`
-  is a single static file with no server of its own — that's what makes it
-  genuinely `<iframe>`-embeddable in Retool/Bubble/etc. — so it reads the same
-  `localStorage` key directly in client-side JS instead of through a server
-  proxy. The key is visible in that page's own source, unlike everywhere else
-  in this app. Flagged in the tool itself, and it's why its "Sync to HubSpot"
-  button shows a JSON preview instead of performing a live push — a real push
-  needs a server-side token, which a key-less static file structurally can't
-  keep secret.
 - **Conference / lead data** — see `lib/db.ts`. Works with **zero setup**
   (falls back to a local JSON file, seeded automatically). For a real
   deployment where every rep on every device should see the same data, add a
@@ -232,19 +219,16 @@ data would unlock:
   above. I didn't make it mandatory because the assignment explicitly values
   "deployable without a complex build pipeline," and a working zero-config
   demo beats a blocked setup step.
-- **Three AI features shipped, but one was built deep on purpose** — the
-  relationship-arc summarizer, because it maps directly onto the hardest,
-  most-weighted requirement in the brief (cross-conference intelligence); the
-  FX follow-up drafter and stress-test narration are real but lower-stakes. An
-  AI-assisted lead-qualification scorer (reading a rep's raw field notes into
-  a suggested ICP tier) is the natural next one. Also worth adding: a "find
-  conferences we don't know about yet" web-search agent, and OCR-based
-  business-card capture for the field form. Cross-conference matching itself
-  could also move from rule-based-plus-review to a small embedding-similarity
-  model once there's enough real interaction volume to justify it, instead of
-  hand-tuned string thresholds.
-- **The stress-test tool trades key-secrecy for portability** — a deliberate,
-  documented choice, not an oversight. See [Keys & storage](#keys--storage).
+- **Two AI features shipped, but the relationship-arc summarizer is the one
+  built deep** — it maps directly onto the hardest, most-weighted requirement
+  in the brief (cross-conference intelligence); the FX follow-up drafter is
+  real but lower-stakes. An AI-assisted lead-qualification scorer (reading a
+  rep's raw field notes into a suggested ICP tier) is the natural next one.
+  Also worth adding: a "find conferences we don't know about yet" web-search
+  agent, and OCR-based business-card capture for the field form.
+  Cross-conference matching itself could also move from rule-based-plus-review
+  to a small embedding-similarity model once there's enough real interaction
+  volume to justify it, instead of hand-tuned string thresholds.
 - **`npm audit` flags additional Next.js advisories** (beyond the one this
   build already includes the patch for) that are fixed only in the Next 16
   major line. I deliberately didn't do that migration blind inside a

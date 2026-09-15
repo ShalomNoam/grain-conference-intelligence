@@ -231,18 +231,19 @@ concrete, not vague.**
 > don't know about yet' web-search agent — using AI for discovery, not just
 > analysis of what's already in the database."
 
-## 7. Calculator — bonus, cut first if short on time (~25s)
+## 7. Calculator — bonus, cut first if short on time (~30s)
 
 > "One more thing, if there's time — not one of the seven core requirements,
 > so I kept it isolated on its own page."
 
 [ACTION: land on `/calculator`]
 
-> "An FX-hedging risk tool a rep can pull up mid-conversation — live
-> exchange rate, an AI-drafted follow-up email, a push to HubSpot. I also
-> built a standalone version as a single embeddable HTML file with real
-> historical stress-testing, for a sales-ops team that might want to drop
-> this into Retool or a landing page without our whole app behind it."
+> "An FX-hedging risk tool a rep can pull up mid-conversation. This chart
+> isn't illustrative — it's live ECB rate history for whatever pair you pick,
+> and the risk number is the actual worst swing that pair has made over the
+> selected window, run through a real stress calculation, not an assumed
+> volatility curve. Same as the rest of the app: a real AI-drafted follow-up
+> email, and a real push to HubSpot — not a preview, an actual push."
 
 ## Close (~10s)
 
@@ -284,3 +285,12 @@ concrete, not vague.**
    guessed: it scores a 92% name match and lands in the "review" bucket
    (neither silent auto-merge nor silently ignored), which is exactly the
    edge case worth demonstrating live.
+5. **Section 7 was rewritten after the Calculator and the separate
+   standalone stress-test tool were merged into one page.** `/calculator`
+   now does everything the standalone `fx-stress-test.html` used to do
+   (live ECB historical chart, real rolling worst-case-window stress math)
+   directly, on the app's real server-backed AI and HubSpot integrations —
+   there's no second tool to link out to anymore, and no client-exposed key
+   or fake HubSpot-preview trade-off to explain. The standalone HTML files
+   still exist on disk but are no longer linked from the app; say the word
+   if you'd rather they were deleted outright.
