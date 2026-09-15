@@ -80,6 +80,14 @@ export const IconAlertCircle = ({ className }: P) => (
   </svg>
 );
 
+export const IconLock = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <circle cx="12" cy="15" r="1.3" fill="currentColor" />
+  </svg>
+);
+
 export const IconDownload = ({ className }: P) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
     <path d="M12 3.5v11.5M8 11.5 12 16l4-4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />

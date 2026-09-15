@@ -22,11 +22,10 @@ export async function POST(req: Request) {
   if (
     typeof input.volume !== "number" ||
     typeof input.pair !== "string" ||
-    typeof input.providerLabel !== "string" ||
-    typeof input.currentSpreadPct !== "number" ||
-    typeof input.grainSpreadPct !== "number" ||
-    typeof input.annualSavingsUsd !== "number" ||
-    typeof input.monthlySavingsUsd !== "number"
+    typeof input.vertical !== "string" ||
+    typeof input.settlementDays !== "number" ||
+    typeof input.volatilityPct !== "number" ||
+    typeof input.profitAtRiskUsd !== "number"
   ) {
     return NextResponse.json({ error: "Missing or invalid calculator figures." }, { status: 400 });
   }

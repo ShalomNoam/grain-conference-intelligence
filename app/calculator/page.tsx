@@ -1,25 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { Vertical } from "@/lib/types";
+import { VERTICAL_LABEL, ALL_VERTICALS } from "@/lib/labels";
 import { getApiKey, getApiProvider, getHubspotToken } from "@/lib/settings";
-import { IconSpark, IconCloudSync, IconCopy, IconX } from "@/components/icons";
+import { IconSpark, IconCloudSync, IconCopy, IconX, IconAlertCircle, IconLock } from "@/components/icons";
 
-const CURRENCY_PAIRS = ["USD/EUR", "USD/GBP", "EUR/GBP", "USD/BRL", "USD/MXN", "USD/INR", "EUR/PLN", "USD/THB", "GBP/AED"];
+const CURRENCY_PAIRS = ["EUR/USD", "GBP/USD", "USD/THB", "GBP/EUR", "EUR/PLN", "USD/BRL", "USD/MXN", "USD/INR", "GBP/AED"];
 
-// Ballpark benchmark spreads for a segmented preset picker instead of a raw
-// slider — much faster to tap on a noisy show floor than dialing in a
-// precise percentage. These are illustrative reference points (same
-// "illustrative, not a quote" status as the rest of this calculator), not
-// figures independently verified against real market data — worth
-// confirming against Grain's actual competitive positioning before using
-// this live in front of a prospect.
-const PROVIDER_PRESETS = [
-  { key: "bank", label: "Traditional Bank", spread: 0.4 },
-  { key: "broker", label: "Typical FX Broker", spread: 0.25 },
-  { key: "fintech", label: "Other Fintech", spread: 0.18 },
-] as const;
-type ProviderKey = (typeof PROVIDER_PRESETS)[number]["key"];
-const GRAIN_SPREAD = 0.1;
+// Illustrative volatility proxy: potential adverse FX move over a given
+// settlement window, roughly consistent with a sqrt(time)-scaled real-world
+// annualized vol assumption (e.g. 1.5% over 15 days implies ~7.4%
+// annualized — a plausible major-pair figure) rather than arbitrary round
+// numbers. Still not a live volatility feed for a specific pair, so it's
+// labeled "illustrative" throughout rather than presented as sourced data.
+const VOLATILITY_BY_DAYS: Record<number, number> = { 15: 1.5, 30: 2.2, 60: 3.2, 90: 4.5 };
+const SETTLEMENT_OPTIONS = [15, 30, 60, 90] as const;
 
 function formatMoney(n: number): string {
   if (!isFinite(n)) return "$0";
@@ -32,17 +28,40 @@ function formatCompact(n: number): string {
   return `$${n}`;
 }
 
+// Deterministic, vertical-aware risk framing — instant, zero API key
+// needed, same reasoning as the calculator's other real-time copy: every
+// input is already on screen, so a template reads as tailored without
+// waiting on a network round-trip.
+function riskExplanation(vertical: Vertical, pair: string, days: number): string {
+  switch (vertical) {
+    case "travel":
+      return `Travel platforms book guest currency weeks before check-in — every day of the ${days}-day settlement gap is a day ${pair} can move against the margin you already quoted the traveler.`;
+    case "cross-border-ecommerce":
+      return `Checkout margin priced in ${pair} isn't locked until settlement — over a ${days}-day window, the margin you quoted at checkout isn't the margin you're guaranteed to keep.`;
+    case "fx-treasury":
+      return `As an FX/treasury operation, ${pair} exposure between transaction and settlement sits directly on your balance sheet as unhedged risk for the full ${days} days.`;
+    case "payments":
+      return `Payment flows in ${pair} carry the full ${days}-day settlement window's volatility on your books until funds actually move.`;
+    case "banking":
+      return `${pair} exposure across a ${days}-day settlement window is balance-sheet risk your treasury desk is carrying, priced or not.`;
+    case "fintech-saas":
+      return `Any ${pair} flow your platform touches between transaction and ${days}-day settlement carries real volatility risk — even if FX isn't the product you sell.`;
+    default:
+      return `${pair} movement over a ${days}-day settlement window is a real cost center, even for a company that isn't primarily a payments business.`;
+  }
+}
+
 interface RateState {
   rate: number | null;
   loading: boolean;
-  error: string | null;
 }
 
 export default function CalculatorPage() {
-  const [volume, setVolume] = useState(5_000_000);
+  const [volume, setVolume] = useState(50_000_000);
   const [pair, setPair] = useState(CURRENCY_PAIRS[0]);
-  const [providerKey, setProviderKey] = useState<ProviderKey>("bank");
-  const [rateState, setRateState] = useState<RateState>({ rate: null, loading: true, error: null });
+  const [vertical, setVertical] = useState<Vertical>("travel");
+  const [settlementDays, setSettlementDays] = useState<number>(30);
+  const [rateState, setRateState] = useState<RateState>({ rate: null, loading: true });
 
   const [prospectName, setProspectName] = useState("");
   const [prospectEmail, setProspectEmail] = useState("");
@@ -58,51 +77,33 @@ export default function CalculatorPage() {
   const [hubspotMsg, setHubspotMsg] = useState<string | null>(null);
 
   const [base, quote] = pair.split("/");
-  const providerPreset = PROVIDER_PRESETS.find((p) => p.key === providerKey)!;
 
-  // Kept simple on purpose — one live number, not a 4-decimal breakdown.
-  // The savings math below never depends on this; a failed fetch just
-  // means the line doesn't render.
   useEffect(() => {
     let cancelled = false;
-    setRateState({ rate: null, loading: true, error: null });
+    setRateState({ rate: null, loading: true });
     fetch(`/api/fx-rate?base=${encodeURIComponent(base)}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
         const r = d.rates?.[quote];
-        setRateState(typeof r === "number" ? { rate: r, loading: false, error: null } : { rate: null, loading: false, error: "unavailable" });
+        setRateState({ rate: typeof r === "number" ? r : null, loading: false });
       })
       .catch(() => {
-        if (!cancelled) setRateState({ rate: null, loading: false, error: "unavailable" });
+        if (!cancelled) setRateState({ rate: null, loading: false });
       });
     return () => {
       cancelled = true;
     };
   }, [base, quote]);
 
-  const { currentCost, grainCost, annualSavings, monthlySavings, pctReduction } = useMemo(() => {
-    const cCost = volume * (providerPreset.spread / 100);
-    const gCost = volume * (GRAIN_SPREAD / 100);
-    const savings = Math.max(0, cCost - gCost);
-    return {
-      currentCost: cCost,
-      grainCost: gCost,
-      annualSavings: savings,
-      monthlySavings: savings / 12,
-      pctReduction: cCost > 0 ? (savings / cCost) * 100 : 0,
-    };
-  }, [volume, providerPreset]);
+  const { volatilityPct, profitAtRiskUsd } = useMemo(() => {
+    const vol = VOLATILITY_BY_DAYS[settlementDays] ?? VOLATILITY_BY_DAYS[30];
+    return { volatilityPct: vol, profitAtRiskUsd: volume * (vol / 100) };
+  }, [volume, settlementDays]);
 
-  // Real-time, deterministic — not routed through an LLM. Every number in
-  // it is already computed above, so a template sentence is instant, free,
-  // and works with zero API key configured, matching this tool's
-  // show-floor "always works" design. The AI call below (email draft) is
-  // where an actual LLM adds value: varied phrasing and tone, not just
-  // filling in numbers.
-  const pitchSentence = `At ${formatCompact(volume)} annual volume in ${pair}, you're currently paying ~${formatMoney(
-    annualSavings
-  )} extra per year in hidden ${providerPreset.label.toLowerCase()} spreads. Grain locks your rate via API and puts that margin straight back onto your bottom line.`;
+  const talkingPoint = `At ${formatCompact(volume)}/yr in ${pair}, that's ~${formatMoney(
+    profitAtRiskUsd
+  )} of margin sitting exposed to market swings every year — with Grain's rate lock, it goes to $0 the moment the transaction starts.`;
 
   async function generateEmail() {
     setEmailModalOpen(true);
@@ -120,11 +121,10 @@ export default function CalculatorPage() {
         body: JSON.stringify({
           volume,
           pair,
-          providerLabel: providerPreset.label,
-          currentSpreadPct: providerPreset.spread,
-          grainSpreadPct: GRAIN_SPREAD,
-          annualSavingsUsd: annualSavings,
-          monthlySavingsUsd: monthlySavings,
+          vertical: VERTICAL_LABEL[vertical],
+          settlementDays,
+          volatilityPct,
+          profitAtRiskUsd,
           prospectName: prospectName || undefined,
         }),
       });
@@ -165,7 +165,7 @@ export default function CalculatorPage() {
     setHubspotBusy(true);
     setHubspotMsg(null);
     try {
-      const noteBody = `FX savings estimate from show-floor conversation.\nPair: ${pair} · Volume: ${formatMoney(volume)}/yr · ${providerPreset.label} spread ${providerPreset.spread}% vs Grain ${GRAIN_SPREAD}%.\nEstimated annual savings: ${formatMoney(annualSavings)} (${pctReduction.toFixed(0)}% reduction).`;
+      const noteBody = `FX risk estimate from show-floor conversation.\nVertical: ${VERTICAL_LABEL[vertical]} · Pair: ${pair} · Volume: ${formatMoney(volume)}/yr · Settlement: ${settlementDays} days.\nEstimated profit at risk (unhedged): ${formatMoney(profitAtRiskUsd)}/yr (~${volatilityPct}% of volume, illustrative). With Grain rate-lock: $0.`;
       const res = await fetch("/api/hubspot/push-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-hubspot-token": token },
@@ -186,9 +186,10 @@ export default function CalculatorPage() {
         <span className="inline-block text-[10.5px] font-mono uppercase tracking-wide bg-warn-bg text-warn-ink rounded-full px-2.5 py-1 mb-2">
           Bonus tool — not one of the 7 core requirements
         </span>
-        <h1 className="text-[26px] font-extrabold bg-grain-headline bg-clip-text text-transparent">FX savings, on the spot</h1>
+        <h1 className="text-[26px] font-extrabold bg-grain-headline bg-clip-text text-transparent">FX risk, on the spot</h1>
         <p className="text-ink-dim text-[14px] max-w-[65ch] mt-1">
-          Built for a noisy conference floor: pick a provider type, drag one slider, and show the dollar number — not a spreadsheet.
+          Grain's actual pitch isn't "cheaper" — it's that the rate is locked from transaction to settlement, so market
+          volatility during that window is Grain's problem, not the prospect's.
         </p>
       </div>
 
@@ -199,9 +200,9 @@ export default function CalculatorPage() {
           <div className="flex items-center gap-2">
             <input
               type="range"
-              min={100000}
-              max={200_000_000}
-              step={100000}
+              min={10_000_000}
+              max={150_000_000}
+              step={1_000_000}
               value={volume}
               onChange={(e) => setVolume(Number(e.target.value))}
               className="flex-1"
@@ -216,71 +217,89 @@ export default function CalculatorPage() {
           </div>
         </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[12.5px] text-ink-dim">Currency pair</span>
-          <select value={pair} onChange={(e) => setPair(e.target.value)} className="border border-line rounded-md px-3 py-2 text-[14px] bg-white">
-            {CURRENCY_PAIRS.map((p) => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-          {rateState.rate !== null && !rateState.loading && (
-            <span className="text-[11.5px] text-ink-faint">
-              Live rate: 1 {base} = {rateState.rate.toFixed(2)} {quote}
-            </span>
-          )}
-        </label>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] text-ink-dim">Currency pair</span>
+            <select value={pair} onChange={(e) => setPair(e.target.value)} className="border border-line rounded-md px-3 py-2 text-[14px] bg-white">
+              {CURRENCY_PAIRS.map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+            {rateState.rate !== null && !rateState.loading && (
+              <span className="text-[11.5px] text-ink-faint">Today's rate: 1 {base} = {rateState.rate.toFixed(2)} {quote}</span>
+            )}
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] text-ink-dim">Prospect's vertical</span>
+            <select
+              value={vertical}
+              onChange={(e) => setVertical(e.target.value as Vertical)}
+              className="border border-line rounded-md px-3 py-2 text-[14px] bg-white"
+            >
+              {ALL_VERTICALS.map((v) => (
+                <option key={v} value={v}>
+                  {VERTICAL_LABEL[v]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         <div>
-          <span className="text-[12.5px] text-ink-dim mb-2 block">Prospect&apos;s current provider</span>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {PROVIDER_PRESETS.map((p) => (
+          <span className="text-[12.5px] text-ink-dim mb-2 block">Settlement / payout delay</span>
+          <div className="grid grid-cols-4 gap-2">
+            {SETTLEMENT_OPTIONS.map((d) => (
               <button
-                key={p.key}
+                key={d}
                 type="button"
-                onClick={() => setProviderKey(p.key)}
-                className={`rounded-lg px-3 py-3 text-left border-2 transition-colors ${
-                  providerKey === p.key ? "border-[#2563EB] bg-blue-50" : "border-line bg-white hover:border-blue-200"
+                onClick={() => setSettlementDays(d)}
+                className={`rounded-lg px-2 py-2.5 text-[13.5px] font-semibold border-2 transition-colors ${
+                  settlementDays === d ? "border-[#2563EB] bg-blue-50 text-ink" : "border-line bg-white text-ink-dim hover:border-blue-200"
                 }`}
               >
-                <p className="text-[13.5px] font-semibold text-ink">{p.label}</p>
-                <p className="text-[12px] text-ink-dim">~{p.spread}% spread</p>
+                {d} Days
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Side-by-side cost comparison — the core "so what" of the tool */}
-      <div className="bg-white border border-line rounded-2xl p-5 flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-danger-bg rounded-xl p-4">
-            <p className="text-[11px] text-danger uppercase tracking-wide font-semibold">{providerPreset.label} cost</p>
-            <p className="text-[24px] font-bold text-danger tabular mt-1">{formatMoney(currentCost)}</p>
-            <p className="text-[11px] text-danger/70">per year</p>
-          </div>
-          <div className="bg-teal-bg rounded-xl p-4">
-            <p className="text-[11px] text-teal uppercase tracking-wide font-semibold">With Grain</p>
-            <p className="text-[24px] font-bold text-teal tabular mt-1">{formatMoney(grainCost)}</p>
-            <p className="text-[11px] text-teal/70">per year</p>
-          </div>
+      {/* Unhedged vs. Grain-hedged comparison — risk, not price */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-danger-bg rounded-2xl p-5 flex flex-col gap-2">
+          <span className="inline-flex items-center gap-1.5 self-start bg-danger text-white text-[10.5px] font-semibold px-2.5 py-1 rounded-full">
+            <IconAlertCircle className="w-3 h-3" />
+            100% Exposed
+          </span>
+          <p className="text-[11px] text-danger uppercase tracking-wide font-semibold mt-1">Profit at risk</p>
+          <p className="text-[30px] font-extrabold text-danger tabular leading-none">-{formatMoney(profitAtRiskUsd)}</p>
+          <p className="text-[11px] text-danger/70">per year · ~{volatilityPct}% of volume (illustrative)</p>
         </div>
-
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#E0ECFD] via-white to-[#D4E6FA] border border-blue-100 rounded-2xl p-5 text-center">
-          <p className="text-[12px] text-[#2563EB] uppercase tracking-wide font-semibold">Estimated annual savings</p>
-          <p className="text-[48px] font-extrabold tabular leading-none mt-1 text-[#111A3A]">{formatMoney(annualSavings)}</p>
-          <p className="text-[14px] font-semibold text-[#2563EB] mt-1">
-            {formatMoney(monthlySavings)}/month · {pctReduction.toFixed(0)}% reduction
-          </p>
+        <div className="bg-teal-bg rounded-2xl p-5 flex flex-col gap-2">
+          <span className="inline-flex items-center gap-1.5 self-start bg-teal text-white text-[10.5px] font-semibold px-2.5 py-1 rounded-full">
+            <IconLock className="w-3 h-3" />
+            100% Hedged
+          </span>
+          <p className="text-[11px] text-teal uppercase tracking-wide font-semibold mt-1">FX risk with Grain</p>
+          <p className="text-[30px] font-extrabold text-teal tabular leading-none">$0</p>
+          <p className="text-[11px] text-teal/70">rate guaranteed via API from day one</p>
         </div>
       </div>
 
-      {/* AI talking point — real-time, deterministic (see comment in code) */}
+      {/* AI Volatility Insight & Sales Pitch — deterministic + vertical-aware, see code comment */}
       <div
-        className="rounded-xl p-4 flex items-start gap-2.5"
+        className="rounded-xl p-4 flex flex-col gap-2.5"
         style={{ background: "linear-gradient(135deg, #f8faff 0%, #f0f7ff 100%)", border: "1px solid rgba(37, 99, 235, 0.2)" }}
       >
-        <IconSpark className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
-        <p className="text-[13.5px] text-slate-700">{pitchSentence}</p>
+        <p className="text-[11px] font-bold tracking-wider text-[#2563EB] uppercase flex items-center gap-1.5">
+          <IconSpark className="w-3.5 h-3.5" />
+          AI Volatility Insight
+        </p>
+        <p className="text-[13.5px] text-slate-700">{riskExplanation(vertical, pair, settlementDays)}</p>
+        <p className="text-[13.5px] text-slate-700 border-t border-blue-100 pt-2.5">
+          <span className="font-semibold text-[#0F172A]">Live rep talking point: </span>
+          {talkingPoint}
+        </p>
       </div>
 
       {/* Prospect details — minimal, only what HubSpot needs */}
@@ -319,14 +338,14 @@ export default function CalculatorPage() {
           className="flex items-center justify-center gap-2 bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold text-[14px] px-4 py-3 rounded-xl shadow-sm transition-all disabled:opacity-50"
         >
           <IconCloudSync className="w-4 h-4" />
-          {hubspotBusy ? "Syncing…" : "Sync to HubSpot"}
+          {hubspotBusy ? "Syncing…" : "Push to HubSpot"}
         </button>
       </div>
       {hubspotMsg && <p className="text-[12.5px] text-ink-dim -mt-2">{hubspotMsg}</p>}
 
       <p className="text-[11.5px] text-ink-faint">
-        Provider spreads are illustrative benchmark ranges, not verified market data — confirm against real positioning before a live
-        pitch. Exchange rate (when shown) is live. Savings figure is an estimate, not a formal quote.
+        Volatility-by-settlement-window figures are an illustrative proxy (not a live volatility feed for this specific pair) —
+        confirm against real market data before a live pitch. Exchange rate shown (when available) is live. Not a formal quote.
       </p>
 
       {emailModalOpen && (
