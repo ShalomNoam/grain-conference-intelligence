@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const CURRENCY_PAIRS = ["USD/EUR", "USD/GBP", "EUR/GBP", "USD/BRL", "USD/MXN", "USD/INR", "EUR/PLN", "USD/THB", "GBP/AED"];
 
@@ -9,11 +9,52 @@ function formatMoney(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+interface RateState {
+  rate: number | null;
+  date: string | null;
+  loading: boolean;
+  error: string | null;
+}
+
 export default function CalculatorPage() {
   const [volume, setVolume] = useState(5_000_000);
   const [pair, setPair] = useState(CURRENCY_PAIRS[0]);
   const [currentSpread, setCurrentSpread] = useState(2.5);
   const [grainSpread, setGrainSpread] = useState(0.6);
+  const [rateState, setRateState] = useState<RateState>({ rate: null, date: null, loading: true, error: null });
+
+  const [base, quote] = pair.split("/");
+
+  // The core $-savings math below is currency-agnostic (spread % × volume
+  // in USD, regardless of the pair) and stays correct even if this fetch
+  // fails — the live rate is added context for the rep to show a prospect
+  // a concrete "here's the real rate, here's what the spread costs you" a
+  // real number gives an abstract % that it doesn't replace or gate.
+  useEffect(() => {
+    let cancelled = false;
+    setRateState((s) => ({ ...s, loading: true, error: null }));
+    fetch(`/api/fx-rate?base=${encodeURIComponent(base)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        if (d.error) {
+          setRateState({ rate: null, date: null, loading: false, error: d.error });
+          return;
+        }
+        const r = d.rates?.[quote];
+        if (typeof r !== "number") {
+          setRateState({ rate: null, date: null, loading: false, error: `No live rate available for ${base}/${quote}.` });
+          return;
+        }
+        setRateState({ rate: r, date: d.date, loading: false, error: null });
+      })
+      .catch(() => {
+        if (!cancelled) setRateState({ rate: null, date: null, loading: false, error: "Couldn't reach the live rate feed." });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [base, quote]);
 
   const { annualSavings, monthlySavings, pctReduction } = useMemo(() => {
     const currentCost = volume * (currentSpread / 100);
@@ -25,6 +66,9 @@ export default function CalculatorPage() {
       pctReduction: currentSpread > 0 ? (savings / currentCost) * 100 : 0,
     };
   }, [volume, currentSpread, grainSpread]);
+
+  const effectiveCurrentRate = rateState.rate !== null ? rateState.rate * (1 - currentSpread / 100) : null;
+  const effectiveGrainRate = rateState.rate !== null ? rateState.rate * (1 - grainSpread / 100) : null;
 
   return (
     <div className="flex flex-col gap-5 max-w-2xl">
@@ -41,7 +85,7 @@ export default function CalculatorPage() {
 
       <div className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-5 flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12.5px] text-ink-dim">Annual cross-border transaction volume</span>
+          <span className="text-[12.5px] text-ink-dim">Annual cross-border transaction volume (USD)</span>
           <div className="flex items-center gap-2">
             <input
               type="range"
@@ -62,13 +106,38 @@ export default function CalculatorPage() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12.5px] text-ink-dim">Primary currency pair (context only — doesn&apos;t change the math below)</span>
+          <span className="text-[12.5px] text-ink-dim">Primary currency pair</span>
           <select value={pair} onChange={(e) => setPair(e.target.value)} className="border border-line rounded-md px-3 py-2 text-[13.5px]">
             {CURRENCY_PAIRS.map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
         </label>
+
+        {/* Live rate panel — real data, fetched per pair. Never blocks the
+            savings math below if it fails to load. */}
+        <div className="border border-line rounded-lg p-3 flex flex-col gap-1.5 bg-paper-alt/60">
+          {rateState.loading ? (
+            <p className="text-[12.5px] text-ink-faint">Loading live rate for {base}/{quote}…</p>
+          ) : rateState.error ? (
+            <p className="text-[12.5px] text-ink-faint">Live rate unavailable ({rateState.error}) — savings math below is unaffected.</p>
+          ) : rateState.rate !== null ? (
+            <>
+              <p className="text-[12.5px] text-ink-dim">
+                Live mid-market rate: <span className="font-semibold text-ink tabular">1 {base} = {rateState.rate.toFixed(4)} {quote}</span>
+                {rateState.date && <span className="text-ink-faint"> · updated {new Date(rateState.date).toLocaleDateString()}</span>}
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-0.5">
+                <p className="text-[12px] text-ink-dim">
+                  At their spread: <span className="font-semibold text-ink tabular">{effectiveCurrentRate?.toFixed(4)} {quote}</span>
+                </p>
+                <p className="text-[12px] text-teal">
+                  With Grain: <span className="font-semibold tabular">{effectiveGrainRate?.toFixed(4)} {quote}</span>
+                </p>
+              </div>
+            </>
+          ) : null}
+        </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1.5">
@@ -125,7 +194,8 @@ export default function CalculatorPage() {
       </div>
 
       <p className="text-[11.5px] text-ink-faint">
-        Illustrative only — based on flat spread assumptions entered above, for a live, in-conversation estimate. Not a quote.
+        Exchange rate is live (updated daily, source: exchangerate-api.com). Savings estimate is illustrative — based on the spread
+        percentages entered above, not a formal quote.
       </p>
     </div>
   );
