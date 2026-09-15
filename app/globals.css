@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 html, body {
-  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #EAF3FE 0%, #F3F8FE 45%, #FBFDFF 100%);
   color: theme('colors.ink.DEFAULT');
   min-height: 100%;
 }
@@ -20,16 +20,20 @@ h1, h2, h3 {
   text-wrap: balance;
 }
 
-/* The signature Grain mesh: a soft glowing ice-blue blob fixed behind the
-   page content, independent of scroll — matches the production site's
-   hero backdrop without every page needing its own gradient container. */
+/* The signature Grain mesh: several soft glowing ice-blue blobs fixed behind
+   the page content, independent of scroll — gives the light-blue backdrop
+   real depth/shading instead of one flat tint, without every page needing
+   its own gradient container. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, rgba(224, 236, 253, 0.4) 0%, rgba(248, 250, 252, 0) 70%);
+  background:
+    radial-gradient(ellipse 55% 40% at 15% 0%, rgba(147, 197, 253, 0.38) 0%, rgba(147, 197, 253, 0) 70%),
+    radial-gradient(ellipse 50% 42% at 88% 8%, rgba(191, 219, 254, 0.42) 0%, rgba(191, 219, 254, 0) 65%),
+    radial-gradient(ellipse 65% 50% at 50% 105%, rgba(219, 234, 254, 0.5) 0%, rgba(219, 234, 254, 0) 70%);
 }
 
 .tabular {

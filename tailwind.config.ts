@@ -68,7 +68,7 @@ const config: Config = {
       },
       backgroundImage: {
         "grain-mesh": "radial-gradient(circle at 50% 0%, rgba(224, 236, 253, 0.45) 0%, rgba(248, 250, 252, 0) 65%)",
-        "grain-page": "linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)",
+        "grain-page": "linear-gradient(180deg, #EAF3FE 0%, #F3F8FE 45%, #FBFDFF 100%)",
         "grain-headline": "linear-gradient(90deg, #1E255E 0%, #2A4494 55%, #60A5FA 100%)",
         "grain-cta": "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)",
         "grain-cta-hover": "linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%)",
