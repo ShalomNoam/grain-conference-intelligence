@@ -191,6 +191,14 @@ export default function CalculatorPage() {
           Grain's actual pitch isn't "cheaper" — it's that the rate is locked from transaction to settlement, so market
           volatility during that window is Grain's problem, not the prospect's.
         </p>
+        <a
+          href="/fx-stress-test.html"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-[13px] font-medium text-[#2563EB] hover:underline mt-2"
+        >
+          Need the institutional version? Open the live historical stress-test tool ↗
+        </a>
       </div>
 
       <div className="bg-white/85 backdrop-blur-sm border border-blue-50/80 shadow-[0_4px_24px_-4px_rgba(20,40,90,0.04)] rounded-2xl p-5 flex flex-col gap-5">
