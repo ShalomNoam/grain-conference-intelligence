@@ -87,6 +87,32 @@ export const IconDownload = ({ className }: P) => (
   </svg>
 );
 
+export const IconChevronDown = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M6 9.5 12 15l6-5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const IconBriefcase = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <rect x="3.5" y="7.5" width="17" height="11.5" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M3.5 12.5h17" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+);
+
+export const IconCloudSync = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path
+      d="M7 17.5a4 4 0 0 1-.5-7.97 5 5 0 0 1 9.66-1.7A4.5 4.5 0 0 1 17 17.5H7Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path d="M10 13.2 12 11l2 2.2M12 11v5.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const IconMail = ({ className }: P) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
     <rect x="3.5" y="5.5" width="17" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" />
