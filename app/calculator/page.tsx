@@ -183,9 +183,6 @@ export default function CalculatorPage() {
   return (
     <div className="flex flex-col gap-5 max-w-2xl">
       <div>
-        <span className="inline-block text-[10.5px] font-mono uppercase tracking-wide bg-warn-bg text-warn-ink rounded-full px-2.5 py-1 mb-2">
-          Bonus tool — not one of the 7 core requirements
-        </span>
         <h1 className="text-[26px] font-extrabold bg-grain-headline bg-clip-text text-transparent">FX risk, on the spot</h1>
         <p className="text-ink-dim text-[14px] max-w-[65ch] mt-1">
           Grain's actual pitch isn't "cheaper" — it's that the rate is locked from transaction to settlement, so market
@@ -195,9 +192,9 @@ export default function CalculatorPage() {
           href="/fx-stress-test.html"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-[13px] font-medium text-[#2563EB] hover:underline mt-2"
+          className="inline-flex items-center gap-1.5 bg-white border border-[#93C5FD] text-[#2563EB] hover:bg-blue-50/50 text-[13.5px] font-semibold px-4 py-2.5 rounded-xl transition-all mt-3"
         >
-          Need the institutional version? Open the live historical stress-test tool ↗
+          Open the institutional stress-test tool ↗
         </a>
       </div>
 
