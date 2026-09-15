@@ -38,52 +38,23 @@ export function ICPMatchBadge({ tier }: { tier: Tier }) {
   );
 }
 
-const TEMP_STYLE: Record<Temperature, string> = {
-  hot: "bg-danger-bg text-danger border-2 border-danger",
-  warm: "bg-warn-bg text-warn-ink border-2 border-warn-ink",
-  cold: "bg-slate-100 text-slate-600 border-2 border-slate-300",
+// Zero emoji — solid status dot + high-contrast text chip. Exact tokens
+// per spec: hot mirrors the reference CSS (#fff1f2/#be123c/#fecdd3,
+// #e11d48 dot); warm follows the same bg-100/text-800/border-200/dot-600
+// structure since only hot had a literal CSS block to match against.
+const TEMP_STYLE: Record<Temperature, { chip: string; dot: string }> = {
+  hot: { chip: "bg-[#fff1f2] text-[#be123c] border border-[#fecdd3]", dot: "bg-[#e11d48]" },
+  warm: { chip: "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]", dot: "bg-[#D97706]" },
+  cold: { chip: "bg-slate-100 text-slate-600 border border-slate-200", dot: "bg-slate-400" },
 };
 
 export function TemperatureBadge({ temperature }: { temperature: Temperature }) {
-  const labels: Record<Temperature, string> = {
-    hot: "🔥 Hot",
-    warm: "🔥 Warm",
-    cold: "❄️ Cold",
-  };
-
+  const labels: Record<Temperature, string> = { hot: "Hot", warm: "Warm", cold: "Cold" };
+  const s = TEMP_STYLE[temperature];
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-[12px] font-semibold capitalize whitespace-nowrap ${TEMP_STYLE[temperature]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap ${s.chip}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} aria-hidden />
       {labels[temperature]}
-    </span>
-  );
-}
-
-export type SignalType = "closing" | "tireKicker" | "firstTouch";
-
-export function SignalBadge({ type, count }: { type: SignalType; count?: number }) {
-  const signals: Record<SignalType, { emoji: string; label: string; className: string }> = {
-    closing: {
-      emoji: "🔥",
-      label: count ? `Closing Signal (${count}+ shows)` : "Closing Signal",
-      className: "bg-green-100 text-green-700 border-green-300",
-    },
-    tireKicker: {
-      emoji: "💤",
-      label: "Low Priority / Tire Kicker",
-      className: "bg-slate-100 text-slate-600 border-slate-300",
-    },
-    firstTouch: {
-      emoji: "🌱",
-      label: "First Touch",
-      className: "bg-blue-100 text-blue-700 border-blue-300",
-    },
-  };
-
-  const signal = signals[type];
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold border ${signal.className}`}>
-      <span>{signal.emoji}</span>
-      {signal.label}
     </span>
   );
 }

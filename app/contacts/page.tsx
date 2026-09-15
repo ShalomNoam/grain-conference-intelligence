@@ -14,6 +14,7 @@ import {
   IconExternalLink,
   IconSpark,
   IconCheck,
+  IconCloudSync,
 } from "@/components/icons";
 
 interface EnrichedContact {
@@ -373,7 +374,7 @@ export default function ContactsPage() {
                         <div className="flex flex-col gap-0.5 min-w-[120px] max-w-[160px]">
                           <p className="text-[12.5px] font-semibold text-[#0F172A] truncate">{confName(i.conferenceId)}</p>
                           <p className="text-[11px] text-slate-400">{monthYear(i.timestamp)}</p>
-                          {i.notes && <p className="text-[11px] text-slate-500 truncate italic">&quot;{i.notes}&quot;</p>}
+                          {i.notes && <p className="text-[11px] text-slate-500 truncate">&quot;{i.notes}&quot;</p>}
                         </div>
                         {idx < interactions.length - 1 && <div className="h-px w-8 sm:w-12 bg-slate-200 mx-2 shrink-0" />}
                       </div>
@@ -390,69 +391,92 @@ export default function ContactsPage() {
                   </div>
                 )}
 
-                {/* Action row */}
-                <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
-                  <button
-                    onClick={() => setExpandedId(isOpen ? null : contact.id)}
-                    className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-slate-700 pt-3"
+                {/* AI Synthesis & Outreach strip — the one dominant action on a
+                    multi-touch card. Single-touch contacts don't get it: the
+                    drawer is gated to 2+ touchpoints same as the badge logic. */}
+                {!isSingleTouch ? (
+                  <div
+                    className="rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap"
+                    style={{ background: "linear-gradient(135deg, #f8faff 0%, #f0f7ff 100%)", border: "1px solid rgba(37, 99, 235, 0.2)" }}
                   >
-                    <IconFileText className="w-3.5 h-3.5" />
-                    View Meeting Notes ({interactions.length})
-                  </button>
-
-                  {!isSingleTouch ? (
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <IconSpark className="w-4 h-4 text-[#2563EB] shrink-0" />
+                      <p className="text-[13.5px] text-slate-700">
+                        <span className="font-semibold text-[#0F172A]">{interactions.length} historical touchpoints detected.</span>{" "}
+                        Ready to draft personalized C-level pitch.
+                      </p>
+                    </div>
                     <button
                       onClick={() => openDrawer(contact.id)}
-                      className="mt-3 inline-flex items-center gap-2 bg-[#0F172A] hover:bg-[#1E293B] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all shadow-sm active:scale-[0.99]"
+                      className="shrink-0 inline-flex items-center gap-2 bg-[#0F172A] hover:bg-[#1E293B] text-white text-[15px] font-semibold px-6 py-2.5 rounded-lg shadow-[0_2px_4px_rgba(15,23,42,0.15)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.2)] hover:-translate-y-px transition-all"
                     >
-                      <IconSpark className="w-[15px] h-[15px]" />
-                      Draft AI Follow-up
+                      <IconSpark className="w-4 h-4" />
+                      Draft AI Follow-up Pitch
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => setExpandedId(contact.id)}
-                      className="mt-3 text-[13px] font-medium text-[#2563EB] hover:underline"
-                    >
-                      Add Follow-up Note
-                    </button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setExpandedId(contact.id)}
+                    className="self-start text-[13px] font-medium text-[#2563EB] hover:underline"
+                  >
+                    Add Follow-up Note
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setExpandedId(isOpen ? null : contact.id)}
+                  className="self-start flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-slate-700"
+                >
+                  <IconFileText className="w-3.5 h-3.5" />
+                  {isOpen ? "Hide" : "View"} Meeting Notes ({interactions.length})
+                </button>
 
                 {isOpen && (
-                  <div className="flex flex-col gap-2 border-t border-slate-100 pt-3">
-                    {!isSingleTouch && <p className="text-[13px] text-slate-500 border-l-2 border-slate-200 pl-3">{arc.nudge}</p>}
+                  <div className="flex flex-col gap-3 border-t border-slate-100 pt-3">
+                    {!isSingleTouch && <p className="text-[13px] text-slate-600 border-l-2 border-slate-200 pl-3">{arc.nudge}</p>}
                     {interactions.map((i) => (
-                      <div key={i.id} className="flex flex-col gap-1 text-[12.5px] border-b border-slate-100 pb-2 last:border-none">
-                        <div className="flex items-center justify-between flex-wrap gap-1.5">
-                          <span className="font-medium text-[#0F172A]">
-                            {confName(i.conferenceId)} · {new Date(i.timestamp).toLocaleDateString()}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <TemperatureBadge temperature={i.temperature} />
-                            <HubspotStatus status={i.hubspotStatus} />
+                      <div key={i.id} className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex flex-col gap-2.5">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-[#0F172A] text-[13.5px]">{confName(i.conferenceId)}</span>
+                            <span className="text-[12px] text-slate-500">{new Date(i.timestamp).toLocaleDateString()}</span>
+                            <span className="text-[11px] text-slate-600 bg-white border border-slate-200 rounded-full px-2 py-0.5 whitespace-nowrap">
+                              rep: {i.repName}
+                            </span>
                           </div>
+                          <TemperatureBadge temperature={i.temperature} />
                         </div>
-                        <p className="text-slate-500">
-                          {i.title || "—"} · {i.company || "—"} · rep: {i.repName}
+
+                        <p className="text-[13px] text-slate-600">
+                          {i.title || "—"} · {i.company || "—"}
                         </p>
-                        {i.notes && <p className="text-slate-500 italic">&quot;{i.notes}&quot;</p>}
+
+                        {i.notes && (
+                          <blockquote className="border-l-2 border-[#2563EB]/40 pl-3 text-[13px] text-[#0F172A] leading-snug">
+                            {i.notes}
+                          </blockquote>
+                        )}
+
                         {i.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1.5">
                             {i.tags.map((t) => (
-                              <span key={t} className="text-[10.5px] bg-slate-50 rounded-full px-2 py-0.5 text-slate-600">
+                              <span key={t} className="text-[11px] bg-white border border-slate-200 rounded-full px-2.5 py-1 text-slate-700">
                                 {t}
                               </span>
                             ))}
                           </div>
                         )}
-                        <div className="flex items-center gap-2 mt-0.5">
+
+                        <div className="flex items-center gap-2 pt-1">
                           <button
                             onClick={() => pushToHubspot(i.id)}
                             disabled={hubspotBusy === i.id || i.hubspotStatus === "synced"}
-                            className="text-[11.5px] font-medium border border-slate-200 rounded-full px-2.5 py-1 disabled:opacity-40"
+                            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold border border-slate-200 bg-white rounded-full px-3 py-1.5 hover:bg-slate-50 disabled:opacity-40 transition-colors"
                           >
-                            {i.hubspotStatus === "synced" ? "Synced" : hubspotBusy === i.id ? "Syncing…" : "Push to HubSpot"}
+                            <IconCloudSync className="w-3 h-3" />
+                            {i.hubspotStatus === "synced" ? "Synced" : hubspotBusy === i.id ? "Syncing…" : "Ready to Sync"}
                           </button>
+                          <HubspotStatus status={i.hubspotStatus} />
                           {hubspotMsg[i.id] && <span className="text-[11px] text-slate-400">{hubspotMsg[i.id]}</span>}
                         </div>
                       </div>
