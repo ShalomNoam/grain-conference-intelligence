@@ -1,8 +1,29 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, saveDb } from "@/lib/db";
 import { computeRelationshipArc } from "@/lib/nudge";
 
 export const dynamic = "force-dynamic";
+
+// Deletes a contact and cascades to its interactions (an interaction
+// orphaned from its contact would break every enrichment in GET above).
+// Does NOT touch HubSpot — a contact synced there stays there; removing it
+// from this app's own data is a separate decision from removing it from a
+// connected third-party CRM.
+export async function DELETE(req: Request) {
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id query param is required" }, { status: 400 });
+
+  const db = await getDb();
+  const before = db.contacts.length;
+  db.contacts = db.contacts.filter((c) => c.id !== id);
+  if (db.contacts.length === before) {
+    return NextResponse.json({ error: "contact not found" }, { status: 404 });
+  }
+  db.interactions = db.interactions.filter((i) => i.contactId !== id);
+  db.pendingMatches = db.pendingMatches.filter((p) => p.candidateContactId !== id);
+  await saveDb(db);
+  return NextResponse.json({ status: "deleted", id });
+}
 
 export async function GET() {
   const db = await getDb();
