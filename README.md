@@ -5,7 +5,7 @@ cross-conference relationship-tracking tool for Grain's sales team — built for
 the AI Builder home assignment.
 
 **Live demo:** https://grain-conference-intelligence-henna.vercel.app/conferences
-**Video walkthrough:** _add your video link here_
+**Video walkthrough:** https://drive.google.com/file/d/1NTkivtNT1dbP8QRAWRZEnKEGD8DyehIM/view
 
 ---
 
